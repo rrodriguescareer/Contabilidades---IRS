@@ -14,7 +14,7 @@ export async function signIn(form: FormData) {
   if (failure) error('Não foi possível entrar. Verifique os dados e confirme o seu email.');
   if (IS_MANAGEMENT) {
     const {data,error: denied}=await client.rpc('is_staff');
-    if (denied || !data) {await client.auth.signOut();error('Esta conta não tem acesso à gestão, ou a base de dados ainda não foi preparada.');}
+    if (denied || !data) {await client.auth.signOut();error('Não foi possível autorizar o acesso à gestão. Contacte o responsável.');}
   }
   redirect('/app');
 }
@@ -46,7 +46,7 @@ export async function changePassword(form: FormData) {
 export async function acceptTerms(form:FormData){
  if(!acceptedLegal(form))error('Tem de aceitar os dois textos para continuar.','/aceitar-termos');
  const {client}=await identity();
- const {error:failure}=await client.rpc('record_legal_acceptance');
- if(failure)error('Não foi possível registar a aceitação. O profissional deve confirmar a migração da base de dados.','/aceitar-termos');
+ const {error:failure}=await client.rpc('record_legal_acceptance',{expected_terms:LEGAL_VERSION,expected_privacy:LEGAL_VERSION});
+ if(failure)error('Não foi possível registar a aceitação. Tente novamente ou contacte o profissional.','/aceitar-termos');
  redirect('/app');
 }

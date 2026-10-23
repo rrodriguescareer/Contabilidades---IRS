@@ -1,67 +1,52 @@
 # Contabilidades — Portal IRS
 
-Next.js 16 + TypeScript, com autenticação Supabase e interface própria de clientes. A gestão de acessos está no repositório [Contabilidades---Clientes](https://github.com/rrodriguescareer/Contabilidades---Clientes).
+Portal privado Next.js + TypeScript para clientes, ligado ao mesmo projeto Supabase da [Gestão de Clientes](https://github.com/rrodriguescareer/Contabilidades---Clientes). O endereço inicial abre a área autenticada; não há cenários, contas fictícias ou modo de demonstração.
 
-## Configurar no Vercel
+## Vercel
 
-Framework: **Next.js**. Diretório raiz. Node.js 24. Definir em Settings → Environment Variables e fazer Redeploy:
+Repositório na branch `main`, Framework **Next.js**, diretório raiz, Node.js **24**, build `npm run build`. Definir as variáveis em Settings → Environment Variables e fazer Redeploy:
 
 ```text
 NEXT_PUBLIC_SUPABASE_URL=https://rllajahyovpzndbbyvcd.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<chave publishable do mesmo projeto>
-NEXT_PUBLIC_SITE_URL=https://<endereco-publico-deste-portal>
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key do mesmo Supabase>
+NEXT_PUBLIC_SITE_URL=https://<URL-publica-do-IRS>
 ```
 
-Se usar a chave antiga `anon`, utilizar `NEXT_PUBLIC_SUPABASE_ANON_KEY` em alternativa. Não usar `service_role` ou secret key. A URL base não inclui `/rest/v1/`. Sem configuração, é apresentada uma explicação; não existem contas ou dados fictícios a substituir uma ligação real.
+A chave antiga `anon` pode ser utilizada em `NEXT_PUBLIC_SUPABASE_ANON_KEY`. São aceites também os aliases de servidor `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_ANON_KEY`. A Gestão usa a mesma URL/chave e o seu próprio `NEXT_PUBLIC_SITE_URL`. Não é obrigatório associar ambos os projetos pela integração automática do Vercel.
 
-## Base central e profissional
+Nunca usar `service_role`, secret key ou password da base de dados no cliente. A variável genérica `SUPABASE_KEY` não é usada. A URL base não inclui `/rest/v1/`. Sem configuração válida, o serviço permanece indisponível e não abre uma sessão fictícia.
 
-Antes de utilizar, aplicar **uma única vez e pela ordem indicada** as migrações `202610230001_core.sql` e `202610230002_legal_acceptances.sql` do repositório de Gestão de Clientes ao Supabase partilhado. O README desse repositório explica o SQL Editor, a criação do profissional e os callbacks de autenticação. Não criar um segundo esquema ou outro projeto Supabase para esta aplicação.
+## Supabase e autenticação
 
-## Funcionalidades desta primeira versão
+No projeto partilhado, aplicar as três migrações do repositório Gestão, por ordem e apenas se estiverem pendentes. Não criar uma segunda base nem executar novamente as migrações já aplicadas. A versão dos textos legais atual é `2026-10-23.2`, correspondente à migração `202610230003_production_legal_version.sql`.
 
-- Registo do titular: nome, email, password da plataforma, telemóvel, morada, NIF e nascimento; confirmação por email. O profissional deve aprovar o acesso.
-- Login, saída e recuperação. A mesma identidade pode ser usada na Gestão, mas só profissionais autorizados entram nessa aplicação.
-- Conta e processo anual; agregado e indicação de 2FA fiscal (alerta para o profissional).
-- Rendimentos por pessoa, imóveis para alienação/rendas e despesas por pessoa/agregado.
-- Modo documental ou informação manual descritiva; o questionário fiscal estruturado completo será desenvolvido por classe/ano.
-- Upload privado de PDF/JPEG/PNG, campos documentais específicos e «Outros», consulta/download de documentos.
-- Mensagens persistidas no processo, progresso publicado pelo profissional e envio para revisão.
-- Consulta de faturas e movimentos existentes, sem emissão ou cobrança.
+Configurar os callbacks `https://URL-IRS/auth/callback` e `https://URL-GESTAO/auth/callback` em Authentication → URL Configuration. Configurar o serviço de email e confirmar que os emails de confirmação e recuperação são entregues. A Gestão explica como autorizar o primeiro profissional.
 
-Os pedidos de convite de familiares ficam registados, mas ainda não enviam emails nem concedem acesso. O cofre de senhas das Finanças não está implementado: não recolher senhas nem códigos 2FA. Anexos dentro do chat, Realtime, notificações, pagamentos, OCR e a plataforma Empresas são fases posteriores. O módulo Empresas é identificado como indisponível, sem encaminhar para uma plataforma inexistente.
+## Acessos
 
-## Executar
+- `/registar`: dados do titular, palavra-passe da plataforma e aceitação obrigatória dos Termos e da Política de Privacidade. A confirmação é validada no servidor e registada na base de dados com versão e data do servidor.
+- `/entrar`: autenticação real. O profissional deve aprovar a conta e o módulo IRS.
+- `/aceitar-termos`: confirmação da versão atual para utilizadores autenticados sem aceitação registada. O histórico anterior é preservado.
+- `/app`: área privada, com controlo de autorização também no banco.
+- `/termos` e `/privacidade`: textos públicos.
+- Os antigos `/teste` e `/demonstracao` apenas encaminham para `/entrar`.
+
+## Funcionalidades
+
+Agregado e indicação de 2FA fiscal; rendimentos por pessoa, imóveis para rendas e alienação, despesas por pessoa/agregado; recolha documental ou informação manual descritiva; documentos privados, mensagens persistidas, progresso e envio para revisão; consulta de faturação e movimentos existentes.
+
+O questionário fiscal estruturado completo por classe/ano, os convites de familiares, o cofre fiscal, OCR, notificações/Realtime, anexos no chat, emissão fiscal, pagamentos e plataforma Empresas são desenvolvimentos pendentes. O sistema não submete IRS à AT. Nunca enviar senhas das Finanças ou códigos 2FA no chat ou em documentos.
+
+## Validação e operação
 
 ```sh
 npm ci
-cp .env.example .env.local
-# Configurar o Supabase de desenvolvimento e o URL deste portal.
-npm run dev
-npm run typecheck
 npm run build
+npm run typecheck
+npm run test:config
+npm run test:legal
 ```
 
-## Validação
+O build, as políticas em PostgreSQL local e as rotas públicas são verificados durante o desenvolvimento. O funcionamento real de Auth, emails e Storage depende das variáveis, das migrações e do projeto remoto; não foi confirmado neste ambiente, que não dispõe dessas credenciais.
 
-O build de produção e os tipos foram verificados localmente. As rotas públicas sem configuração, a proteção da área privada, os callbacks inválidos, a ausência de indexação e a apresentação responsiva são verificados no navegador. As políticas do banco são testadas no repositório de gestão com PostgreSQL em memória. Login real, confirmação/recuperação por email e Storage remoto precisam de validação depois de configurar as variáveis e aplicar a migração.
-
-## Explorar sem configurar Supabase
-
-A rota `/demonstracao` funciona sem variáveis de ambiente ou base de dados. Sem configuração, o endereço inicial abre automaticamente essa demonstração. A entrada real continua em `/entrar`, com ligação de volta ao exemplo. Depois de configurar o Supabase, o endereço inicial passa para a área autenticada.
-
-A demonstração identifica claramente dados fictícios em memória: agregado, rendimentos, imóveis, documentos simulados, mensagens e progresso. Na Gestão também permite simular concessões de módulos e acompanhar alertas. Não tem uploads reais, emails, passwords ou persistência; recarregar repõe os exemplos. As duas aplicações não sincronizam estes dados entre si. A demonstração não abre ou contorna os dados protegidos em `/app`.
-
-### Integração automática Vercel / Supabase
-
-Uma integração automática num projeto Vercel não é necessária no segundo. O segundo projeto pode usar os mesmos valores públicos de URL e chave do primeiro, mantendo o seu próprio `NEXT_PUBLIC_SITE_URL`. O código também aceita os aliases de servidor `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_ANON_KEY`, frequentemente disponibilizados por integrações. Nunca usa a variável genérica `SUPABASE_KEY`, porque o seu tipo seria ambíguo. Chaves `sb_secret_` e JWT com papel diferente de `anon` são recusados por esta configuração.
-
-## Termos, privacidade e acesso de teste
-
-- `/termos` e `/privacidade`: textos públicos, versão `2026-10-23.1`.
-- O registo exige a marcação «Li e aceito os Termos e Condições e a Política de Privacidade», com validação no servidor. Uma simples presença de um campo chamado `consent` não é suficiente: o valor tem de corresponder à confirmação.
-- Utilizadores autenticados sem aceitação atual são encaminhados para `/aceitar-termos`. A aceitação é registada pela base de dados com data do servidor e versões, sem lhes atribuir módulos.
-- Aplicar **depois da migração inicial** a migração `202610230002_legal_acceptances.sql` do repositório Gestão. Não existe um registo real de aceitação enquanto a migração não estiver aplicada e o Supabase configurado.
-- `/teste`: acesso público ao cenário fictício «Cliente de teste», identificado por `teste.irs@example.com`, sem password. O checkbox desse percurso demonstra a interação e não cria utilizador nem registo legal real. A área `/app` mantém autenticação e controlo de acessos.
-
-Uma conta de teste Supabase real não foi criada: as credenciais de acesso ao projeto não estão disponíveis no ambiente de desenvolvimento. Nunca existe um email/password hardcoded que permita contornar a autenticação. Os textos legais descrevem o produto atual e devem acompanhar a configuração efetiva dos serviços.
+Verificar em produção: registo e confirmação, aceitação legal, aprovação pelo profissional, isolamento entre clientes, upload/download, mensagens, progresso e revogação. Configurar retenção e backups antes de receber dados fiscais. Para desenvolvimento local, usar `.env.local` e `npm run dev`; não adicionar segredos ao Git.
