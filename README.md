@@ -45,3 +45,13 @@ npm run build
 ## Validação
 
 O build de produção e os tipos foram verificados localmente. As rotas públicas sem configuração, a proteção da área privada, os callbacks inválidos, a ausência de indexação e a apresentação responsiva são verificados no navegador. As políticas do banco são testadas no repositório de gestão com PostgreSQL em memória. Login real, confirmação/recuperação por email e Storage remoto precisam de validação depois de configurar as variáveis e aplicar a migração.
+
+## Explorar sem configurar Supabase
+
+A rota `/demonstracao` funciona sem variáveis de ambiente ou base de dados. Sem configuração, o endereço inicial abre automaticamente essa demonstração. A entrada real continua em `/entrar`, com ligação de volta ao exemplo. Depois de configurar o Supabase, o endereço inicial passa para a área autenticada.
+
+A demonstração identifica claramente dados fictícios em memória: agregado, rendimentos, imóveis, documentos simulados, mensagens e progresso. Na Gestão também permite simular concessões de módulos e acompanhar alertas. Não tem uploads reais, emails, passwords ou persistência; recarregar repõe os exemplos. As duas aplicações não sincronizam estes dados entre si. A demonstração não abre ou contorna os dados protegidos em `/app`.
+
+### Integração automática Vercel / Supabase
+
+Uma integração automática num projeto Vercel não é necessária no segundo. O segundo projeto pode usar os mesmos valores públicos de URL e chave do primeiro, mantendo o seu próprio `NEXT_PUBLIC_SITE_URL`. O código também aceita os aliases de servidor `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_ANON_KEY`, frequentemente disponibilizados por integrações. Nunca usa a variável genérica `SUPABASE_KEY`, porque o seu tipo seria ambíguo. Chaves `sb_secret_` e JWT com papel diferente de `anon` são recusados por esta configuração.
