@@ -8,7 +8,8 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test:config": "node --test tests/config.test.mjs",
-    "test:legal": "node --test tests/legal.test.mjs"
+    "test:legal": "node --test tests/legal.test.mjs",
+    "test:validation": "node --test tests/validation.test.mjs"
   },
   "dependencies": {
     "next": "16.4.3",

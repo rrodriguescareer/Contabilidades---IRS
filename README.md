@@ -50,3 +50,9 @@ npm run test:legal
 O build, as políticas em PostgreSQL local e as rotas públicas são verificados durante o desenvolvimento. O funcionamento real de Auth, emails e Storage depende das variáveis, das migrações e do projeto remoto; não foi confirmado neste ambiente, que não dispõe dessas credenciais.
 
 Verificar em produção: registo e confirmação, aceitação legal, aprovação pelo profissional, isolamento entre clientes, upload/download, mensagens, progresso e revogação. Configurar retenção e backups antes de receber dados fiscais. Para desenvolvimento local, usar `.env.local` e `npm run dev`; não adicionar segredos ao Git.
+
+## Processos por ano
+
+O profissional abre cada exercício na Gestão de Clientes. O titular pode alternar entre os processos disponíveis no seletor do topo. Um novo ano começa sem rendimentos, imóveis ou documentos anteriores; na área Agregado fiscal, pode associar as pessoas já registadas e confirmar o parentesco para esse ano. Não é criado um novo login para cada familiar. Esta funcionalidade requer a migração `202610230004_annual_cases.sql` do repositório Gestão, aplicada uma única vez ao Supabase partilhado, depois das anteriores.
+
+O registo e a adição de pessoas validam datas reais, datas futuras, formatos e limites de contacto no servidor. A validação de formato do NIF não confirma a identidade nem a titularidade perante a AT. Pode executar `npm run test:validation` para verificar estas regras localmente.

@@ -4,6 +4,7 @@ import { supabase, siteUrl } from './supabase';
 import { IS_MANAGEMENT } from './app';
 import { acceptedLegal,LEGAL_VERSION } from './legal';
 import { identity } from './auth';
+import { registrationError } from './validation';
 const text = (form: FormData, name: string) => String(form.get(name) || '').trim();
 function error(message: string, path='/entrar'): never { redirect(`${path}?erro=${encodeURIComponent(message)}`); }
 export async function signIn(form: FormData) {
@@ -22,8 +23,8 @@ export async function signUp(form: FormData) {
   if (IS_MANAGEMENT) error('O registo de profissionais é feito pela administração.');
   if(!acceptedLegal(form))error('Tem de aceitar os Termos e Condições e a Política de Privacidade.','/registar');
   const email=text(form,'email'),password=String(form.get('password')||''),name=text(form,'full_name'),nif=text(form,'nif'),dob=text(form,'birth_date'),phone=text(form,'phone'),address=text(form,'address');
-  if (!name || !/^\d{9}$/.test(nif) || !/^\d{4}-\d{2}-\d{2}$/.test(dob) || !phone || !address || password.length<12 || password.length>128) error('Preencha todos os campos, confirme a autorização e use uma palavra-passe com 12 ou mais caracteres.','/registar');
-  const origin=siteUrl();if (!origin) error('Falta configurar NEXT_PUBLIC_SITE_URL para confirmar o email.','/registar');
+  const invalid=registrationError({name,birth:dob,nif,email,phone,address,password});if(invalid)error(invalid,'/registar');
+  const origin=siteUrl();if (!origin) error('O registo está temporariamente indisponível. Contacte o profissional.','/registar');
   const client=await supabase();
   const {error: failure}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${origin}/auth/callback`,data:{full_name:name,nif,birth_date:dob,phone,address,terms_accepted:true,terms_version:LEGAL_VERSION,privacy_version:LEGAL_VERSION}}});
   if (failure) error('Não foi possível concluir o registo. Verifique os dados ou tente recuperar o acesso.','/registar');
