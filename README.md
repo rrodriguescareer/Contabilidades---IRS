@@ -16,7 +16,7 @@ Se usar a chave antiga `anon`, utilizar `NEXT_PUBLIC_SUPABASE_ANON_KEY` em alter
 
 ## Base central e profissional
 
-Antes de utilizar, aplicar **uma única vez** a migração do repositório de Gestão de Clientes ao Supabase partilhado. O README desse repositório explica o SQL Editor, a criação do profissional e os callbacks de autenticação. Não criar um segundo esquema ou outro projeto Supabase para esta aplicação.
+Antes de utilizar, aplicar **uma única vez e pela ordem indicada** as migrações `202610230001_core.sql` e `202610230002_legal_acceptances.sql` do repositório de Gestão de Clientes ao Supabase partilhado. O README desse repositório explica o SQL Editor, a criação do profissional e os callbacks de autenticação. Não criar um segundo esquema ou outro projeto Supabase para esta aplicação.
 
 ## Funcionalidades desta primeira versão
 
@@ -55,3 +55,13 @@ A demonstração identifica claramente dados fictícios em memória: agregado, r
 ### Integração automática Vercel / Supabase
 
 Uma integração automática num projeto Vercel não é necessária no segundo. O segundo projeto pode usar os mesmos valores públicos de URL e chave do primeiro, mantendo o seu próprio `NEXT_PUBLIC_SITE_URL`. O código também aceita os aliases de servidor `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_ANON_KEY`, frequentemente disponibilizados por integrações. Nunca usa a variável genérica `SUPABASE_KEY`, porque o seu tipo seria ambíguo. Chaves `sb_secret_` e JWT com papel diferente de `anon` são recusados por esta configuração.
+
+## Termos, privacidade e acesso de teste
+
+- `/termos` e `/privacidade`: textos públicos, versão `2026-10-23.1`.
+- O registo exige a marcação «Li e aceito os Termos e Condições e a Política de Privacidade», com validação no servidor. Uma simples presença de um campo chamado `consent` não é suficiente: o valor tem de corresponder à confirmação.
+- Utilizadores autenticados sem aceitação atual são encaminhados para `/aceitar-termos`. A aceitação é registada pela base de dados com data do servidor e versões, sem lhes atribuir módulos.
+- Aplicar **depois da migração inicial** a migração `202610230002_legal_acceptances.sql` do repositório Gestão. Não existe um registo real de aceitação enquanto a migração não estiver aplicada e o Supabase configurado.
+- `/teste`: acesso público ao cenário fictício «Cliente de teste», identificado por `teste.irs@example.com`, sem password. O checkbox desse percurso demonstra a interação e não cria utilizador nem registo legal real. A área `/app` mantém autenticação e controlo de acessos.
+
+Uma conta de teste Supabase real não foi criada: as credenciais de acesso ao projeto não estão disponíveis no ambiente de desenvolvimento. Nunca existe um email/password hardcoded que permita contornar a autenticação. Os textos legais descrevem o produto atual e devem acompanhar a configuração efetiva dos serviços.
