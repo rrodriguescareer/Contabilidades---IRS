@@ -16,7 +16,7 @@ A conta confirmada do contabilista é encaminhada para a Gestão quando `NEXT_PU
 
 ## Ativação
 
-**A instalação existente 001–004 precisa da atualização `supabase/upgrade-005-007.sql` do repositório Gestão**, executada uma vez no SQL Editor do Supabase partilhado. Não repetir a instalação inicial. A nova versão legal é `2026-10-23.3`; os registos anteriores são preservados.
+**A instalação existente deve executar `supabase/update-current.sql` do repositório Gestão**, no SQL Editor do Supabase partilhado. O ficheiro aplica apenas as atualizações 005–008 em falta e pode ser repetido sem reiniciar dados. Não repetir a instalação inicial. A nova versão legal é `2026-10-23.3`; os registos anteriores são preservados.
 
 Consultar o [guia completo de ativação](https://github.com/rrodriguescareer/Contabilidades---Clientes/blob/main/docs/ativacao.md) para configurar o remetente RR, templates de email, conta do contabilista, convites e Revolut. O template de confirmação tem assunto **RR - IRS - Ativação da Sua Conta**, mas assunto/remetente/SMTP exigem configuração no Supabase e no fornecedor de envio. O código não altera remotamente essas configurações.
 
@@ -43,6 +43,8 @@ Os ficheiros ficam em Storage privado, com metadados e SHA-256 em Postgres; docu
 npm ci
 npm run typecheck
 npm run build
+npm run test:auth
+npm run test:dashboard
 npm run test:config
 npm run test:legal
 npm run test:validation
@@ -50,3 +52,5 @@ npm run test:revolut
 ```
 
 Os testes de RLS, preços, descontos, migrações, convites e pagamentos no banco estão no repositório Gestão. Não existem cenários, contas ou dados fictícios publicados. Sem configuração válida, o acesso fica indisponível. `/teste` e `/demonstracao` apenas redirecionam para `/entrar`.
+
+A navegação carrega apenas os dados do separador aberto. A área Mensagens atualiza as respostas automaticamente, através de Realtime com fallback periódico enquanto está visível. Conta e ano são selecionados sem recarregar o documento inteiro. A cache da sessão dura apenas o pedido atual e não partilha dados entre clientes.

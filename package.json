@@ -10,7 +10,9 @@
     "test:config": "node --test tests/config.test.mjs",
     "test:legal": "node --test tests/legal.test.mjs",
     "test:validation": "node --test tests/validation.test.mjs",
-    "test:revolut": "node --test tests/revolut.test.mjs"
+    "test:revolut": "node --test tests/revolut.test.mjs",
+    "test:dashboard": "node --test tests/dashboard.test.mjs",
+    "test:auth": "node --test tests/auth-access.test.mjs"
   },
   "dependencies": {
     "next": "16.4.3",
