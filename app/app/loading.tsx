@@ -1,0 +1,1 @@
+export default function Loading(){return <section aria-busy="true" aria-label="A carregar o IRS"><span className="eyebrow">IRS 2026</span><div className="loading-placeholder short"/><div className="loading-placeholder"/><p role="status">A carregar…</p></section>;}
