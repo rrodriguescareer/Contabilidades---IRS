@@ -1,1 +1,12 @@
-export default function Loading(){return <section aria-busy="true" aria-label="A carregar o IRS"><span className="eyebrow">IRS 2026</span><div className="loading-placeholder short"/><div className="loading-placeholder"/><p role="status">A carregar…</p></section>;}
+export default function ACarregar() {
+  return (
+    <div className="envolve" style={{ paddingBlock: 'var(--e-6)', display: 'grid', gap: 'var(--e-4)' }} aria-busy="true">
+      <span className="esqueleto" style={{ blockSize: '2rem', inlineSize: '14rem' }} />
+      <span className="esqueleto" style={{ blockSize: '5rem' }} />
+      <span className="esqueleto" style={{ blockSize: '12rem' }} />
+      <p role="status" className="so-leitor">
+        A carregar o seu processo.
+      </p>
+    </div>
+  );
+}
