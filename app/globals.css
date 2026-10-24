@@ -6,3 +6,7 @@
 @media(max-width:850px){.app-shell{grid-template-columns:minmax(0,1fr)}}
 
 .legal-layout{width:min(calc(100% - 40px),940px);margin:40px auto}.legal-layout>.brand{max-width:330px}.legal-article{padding:clamp(24px,5vw,48px)}.legal-article h1{font-size:clamp(1.8rem,4vw,2.6rem);max-width:26ch}.legal-article section{margin-top:30px}.legal-article p{line-height:1.85;overflow-wrap:anywhere}.legal-nav{display:flex;gap:12px 20px;flex-wrap:wrap;font-size:12px}.legal-check{margin:24px 0;line-height:1.8;font-size:12px}.legal-check input{flex:none;width:17px;height:17px;margin-top:3px}.legal-check span{min-width:0}.legal-check a{white-space:normal}.legal-layout form>.primary{margin-top:6px}.legal-article .alert p{font-size:12px}
+
+.standalone{max-width:1100px;margin:auto;padding:clamp(20px,4vw,48px)}.standalone>h1{margin-top:28px}.price-lines{list-style:none;padding:0}.price-lines li{display:flex;justify-content:space-between;gap:24px;border-bottom:1px solid var(--line);padding:12px 0}.price-total{display:flex;justify-content:space-between;font-size:22px;font-weight:700;gap:20px}.danger{color:#a43224!important;border-color:#dbb4ae!important}.management .module-links{display:flex;gap:10px;flex-wrap:wrap}.invite-result{overflow-wrap:anywhere;margin:12px 0}
+
+.module-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}.management .sidebar-bottom a{color:#b4dbc9}.sidebar-bottom>a{display:block;margin-bottom:14px}.record>div{min-width:0;overflow-wrap:anywhere}

@@ -1,58 +1,52 @@
 # Contabilidades — Portal IRS
 
-Portal privado Next.js + TypeScript para clientes, ligado ao mesmo projeto Supabase da [Gestão de Clientes](https://github.com/rrodriguescareer/Contabilidades---Clientes). O endereço inicial abre a área autenticada; não há cenários, contas fictícias ou modo de demonstração.
+Portal privado Next.js/TypeScript para clientes IRS, ligado ao mesmo Supabase que a [Gestão de Clientes](https://github.com/rrodriguescareer/Contabilidades---Clientes).
 
-## Vercel
+## Percurso do cliente
 
-Repositório na branch `main`, Framework **Next.js**, diretório raiz, Node.js **24**, build `npm run build`. Definir as variáveis em Settings → Environment Variables e fazer Redeploy:
+1. Criar conta com email, palavra-passe e aceitação dos termos/privacidade.
+2. Confirmar o email e preencher nome, NIF, nascimento, telemóvel e morada (rua/número, código postal e localidade).
+3. A conta e o primeiro processo anual são abertos automaticamente, sem aprovação manual.
+4. Criar o agregado, adicionar rendimentos e documentos e enviar convites aos familiares.
+5. Consultar as rubricas do preço com IVA, aplicar desconto e confirmar **Pagar e Submeter**. O processo segue para revisão profissional após confirmação do pagamento, sem submissão automática à AT.
 
-```text
-NEXT_PUBLIC_SUPABASE_URL=https://rllajahyovpzndbbyvcd.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=<publishable key do mesmo Supabase>
-NEXT_PUBLIC_SITE_URL=https://<URL-publica-do-IRS>
-```
+O nome não é obtido automaticamente pelo NIF. Em **A minha conta**, o cliente altera os dados pessoais, email (mediante confirmação) e palavra-passe (mediante reautenticação). Os convites têm validade de sete dias e os seus estados são visíveis nos cartões dos membros. Aceitar confirma a associação, sem acesso aos dados fiscais dos restantes familiares.
 
-A chave antiga `anon` pode ser utilizada em `NEXT_PUBLIC_SUPABASE_ANON_KEY`. São aceites também os aliases de servidor `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_ANON_KEY`. A Gestão usa a mesma URL/chave e o seu próprio `NEXT_PUBLIC_SITE_URL`. Não é obrigatório associar ambos os projetos pela integração automática do Vercel.
+A conta confirmada do contabilista é encaminhada para a Gestão quando `NEXT_PUBLIC_GESTAO_URL` está configurado. Os módulos profissionais ficam nessa aplicação.
 
-Nunca usar `service_role`, secret key ou password da base de dados no cliente. A variável genérica `SUPABASE_KEY` não é usada. A URL base não inclui `/rest/v1/`. Sem configuração válida, o serviço permanece indisponível e não abre uma sessão fictícia.
+## Ativação
 
-## Supabase e autenticação
+**A instalação existente 001–004 precisa da atualização `supabase/upgrade-005-007.sql` do repositório Gestão**, executada uma vez no SQL Editor do Supabase partilhado. Não repetir a instalação inicial. A nova versão legal é `2026-10-23.3`; os registos anteriores são preservados.
 
-No projeto partilhado, aplicar as três migrações do repositório Gestão, por ordem e apenas se estiverem pendentes. Não criar uma segunda base nem executar novamente as migrações já aplicadas. A versão dos textos legais atual é `2026-10-23.2`, correspondente à migração `202610230003_production_legal_version.sql`.
+Consultar o [guia completo de ativação](https://github.com/rrodriguescareer/Contabilidades---Clientes/blob/main/docs/ativacao.md) para configurar o remetente RR, templates de email, conta do contabilista, convites e Revolut. O template de confirmação tem assunto **RR - IRS - Ativação da Sua Conta**, mas assunto/remetente/SMTP exigem configuração no Supabase e no fornecedor de envio. O código não altera remotamente essas configurações.
 
-Configurar os callbacks `https://URL-IRS/auth/callback` e `https://URL-GESTAO/auth/callback` em Authentication → URL Configuration. Configurar o serviço de email e confirmar que os emails de confirmação e recuperação são entregues. A Gestão explica como autorizar o primeiro profissional.
+No Vercel: importar `main`, **Next.js**, raiz, Node.js **24**, `npm run build`. Usar `.env.example`; variáveis básicas:
 
-## Acessos
+- `NEXT_PUBLIC_SUPABASE_URL=https://rllajahyovpzndbbyvcd.supabase.co`
+- `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` ou `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `NEXT_PUBLIC_SITE_URL`: URL deste IRS
+- `NEXT_PUBLIC_GESTAO_URL`: URL da Gestão
 
-- `/registar`: dados do titular, palavra-passe da plataforma e aceitação obrigatória dos Termos e da Política de Privacidade. A confirmação é validada no servidor e registada na base de dados com versão e data do servidor.
-- `/entrar`: autenticação real. O profissional deve aprovar a conta e o módulo IRS.
-- `/aceitar-termos`: confirmação da versão atual para utilizadores autenticados sem aceitação registada. O histórico anterior é preservado.
-- `/app`: área privada, com controlo de autorização também no banco.
-- `/termos` e `/privacidade`: textos públicos.
-- Os antigos `/teste` e `/demonstracao` apenas encaminham para `/entrar`.
+Também são aceites `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` e `SUPABASE_ANON_KEY`. As chaves privadas administrativas e Merchant nunca podem ter prefixo `NEXT_PUBLIC_`.
 
-## Funcionalidades
+## Cobrança e documentos
 
-Agregado e indicação de 2FA fiscal; rendimentos por pessoa, imóveis para rendas e alienação, despesas por pessoa/agregado; recolha documental ou informação manual descritiva; documentos privados, mensagens persistidas, progresso e envio para revisão; consulta de faturação e movimentos existentes.
+O checkout calcula em cêntimos no banco, guarda um orçamento imutável e confirma a ordem no servidor por ID/referência/valor/moeda. Gratuidade e códigos obrigatórios definidos pelo contabilista são aplicados automaticamente. Utilizações de descontos são reservadas por tentativas pendentes. Um cliente gratuito pode submeter sem Revolut.
 
-O questionário fiscal estruturado completo por classe/ano, os convites de familiares, o cofre fiscal, OCR, notificações/Realtime, anexos no chat, emissão fiscal, pagamentos e plataforma Empresas são desenvolvimentos pendentes. O sistema não submete IRS à AT. Nunca enviar senhas das Finanças ou códigos 2FA no chat ou em documentos.
+A cobrança real usa Revolut Merchant e permanece desativada até serem fornecidas as credenciais privadas e validada a API/assinatura do webhook na conta Merchant. A documentação oficial foi bloqueada pela rede deste ambiente; a integração não foi validada com o fornecedor real. Não existe simulação de pagamentos publicada. A integração Cegid para emitir/enviar/anexar faturas é posterior.
 
-## Validação e operação
+Os ficheiros ficam em Storage privado, com metadados e SHA-256 em Postgres; documentos idênticos no mesmo processo reutilizam o objeto. Os originais são preservados. PDF/JPEG/PNG até 10 MB; links assinados de 60 segundos. Não existe cofre de senhas das Finanças, OCR, antivírus automático ou submissão de declarações à AT. Não carregar credenciais fiscais em ficheiros ou mensagens.
+
+## Verificação
 
 ```sh
 npm ci
-npm run build
 npm run typecheck
+npm run build
 npm run test:config
 npm run test:legal
+npm run test:validation
+npm run test:revolut
 ```
 
-O build, as políticas em PostgreSQL local e as rotas públicas são verificados durante o desenvolvimento. O funcionamento real de Auth, emails e Storage depende das variáveis, das migrações e do projeto remoto; não foi confirmado neste ambiente, que não dispõe dessas credenciais.
-
-Verificar em produção: registo e confirmação, aceitação legal, aprovação pelo profissional, isolamento entre clientes, upload/download, mensagens, progresso e revogação. Configurar retenção e backups antes de receber dados fiscais. Para desenvolvimento local, usar `.env.local` e `npm run dev`; não adicionar segredos ao Git.
-
-## Processos por ano
-
-O profissional abre cada exercício na Gestão de Clientes. O titular pode alternar entre os processos disponíveis no seletor do topo. Um novo ano começa sem rendimentos, imóveis ou documentos anteriores; na área Agregado fiscal, pode associar as pessoas já registadas e confirmar o parentesco para esse ano. Não é criado um novo login para cada familiar. Esta funcionalidade requer a migração `202610230004_annual_cases.sql` do repositório Gestão, aplicada uma única vez ao Supabase partilhado, depois das anteriores.
-
-O registo e a adição de pessoas validam datas reais, datas futuras, formatos e limites de contacto no servidor. A validação de formato do NIF não confirma a identidade nem a titularidade perante a AT. Pode executar `npm run test:validation` para verificar estas regras localmente.
+Os testes de RLS, preços, descontos, migrações, convites e pagamentos no banco estão no repositório Gestão. Não existem cenários, contas ou dados fictícios publicados. Sem configuração válida, o acesso fica indisponível. `/teste` e `/demonstracao` apenas redirecionam para `/entrar`.

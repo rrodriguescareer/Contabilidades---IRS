@@ -1,0 +1,10 @@
+import {saveProfile} from '@/lib/profile-actions';
+import {Submit} from './forms';
+export type PersonalProfile={full_name:string;birth_date:string|null;nif:string|null;phone:string|null;street:string|null;postal_code:string|null;locality:string|null};
+export default function ProfileForm({profile,twoFactor=false,editing=false}:{profile:PersonalProfile;twoFactor?:boolean;editing?:boolean}){
+ return <form action={saveProfile}><input type="hidden" name="return" value={editing?'/perfil':'/onboarding'}/><label>Nome completo<input name="name" autoComplete="name" defaultValue={profile.full_name==='Novo utilizador'?'':profile.full_name} required maxLength={200}/></label>
+ <div className="field-grid"><label>NIF<input name="nif" inputMode="numeric" pattern="[1-9][0-9]{8}" maxLength={9} defaultValue={profile.nif||''} required/></label><label>Data de nascimento<input name="birth_date" type="date" max={new Date().toISOString().slice(0,10)} defaultValue={profile.birth_date||''} required/></label></div>
+ <label>Telemóvel<input name="phone" type="tel" autoComplete="tel" maxLength={30} defaultValue={profile.phone||''} required/></label>
+ <label>Morada — rua e número<input name="street" autoComplete="address-line1" maxLength={300} defaultValue={profile.street||''} required/></label><div className="field-grid"><label>Código postal<input name="postal_code" autoComplete="postal-code" pattern="[0-9]{4}-[0-9]{3}" placeholder="4470-147" defaultValue={profile.postal_code||''} required/></label><label>Localidade<input name="locality" autoComplete="address-level2" maxLength={100} defaultValue={profile.locality||''} required/></label></div>
+ <label className="check"><input type="checkbox" name="two_factor" defaultChecked={twoFactor}/>Tenho duplo fator ativo no Portal das Finanças — avisar o contabilista.</label><p className="fine">O nome é preenchido por si. Não consultamos dados pessoais na AT através do NIF. Não introduza senhas das Finanças.</p><Submit>{editing?'Guardar dados pessoais':'Guardar e começar o IRS'}</Submit></form>;
+}
