@@ -18,8 +18,12 @@ export async function signIn(form:FormData){
  if(failure||!auth.user)error(signInError(failure?.code));
  // The protected destination verifies database permissions once using session().
  // Avoid a duplicate context lookup before and after this redirect.
+ // Volta ao que o visitante tentou abrir, desde que seja um caminho desta
+ // aplicação: '//exemplo.pt' sairia daqui para fora.
+ const pedido=text(form,'destino');
+ const interno=/^\/(?!\/)/.test(pedido)?pedido:'';
  const {cookies}=await import('next/headers');if((await cookies()).get('rr_invite'))redirect('/convites/aceitar');
- redirect('/app');
+ redirect(interno||'/app');
 }
 export async function signUp(form: FormData) {
   if (IS_MANAGEMENT) error('O registo de profissionais é feito pela administração.');

@@ -61,6 +61,11 @@ export function Portal(props: Props) {
       if (gabinete) procura.set('gabinete', '1');
 
       const resposta = await fetch(`/api/espaco?${procura}`, { cache: 'no-store' });
+      if (resposta.status === 401) {
+        // A sessão caiu enquanto a aplicação estava aberta.
+        window.location.href = `/entrar?destino=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+        return;
+      }
       if (!resposta.ok) {
         definirAviso({ erro: 'Não foi possível carregar este separador.' });
         return;
