@@ -127,7 +127,7 @@ export default function Pagina() {
 
         <section className={`${e.seccao} ${e.seccaoClara}`}>
           <div className="envolve">
-            <div className={e.cabecalho}>
+            <div className={`${e.cabecalho} ${e.cabecalhoSolto}`}>
               <p className={e.olho}>Confiança</p>
               <h2 className={e.seccaoTitulo}>Rigor em cada detalhe.</h2>
             </div>

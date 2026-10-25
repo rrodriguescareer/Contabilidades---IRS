@@ -102,19 +102,25 @@
    ser linhas azuis sobre branco e passam a luz sobre o azul profundo. */
 .atomo { position: relative; min-block-size: 440px; display: grid; place-items: center; isolation: isolate; }
 .atomo::before {
-  content: ''; position: absolute; inline-size: 82%; aspect-ratio: 1; border-radius: 50%;
+  content: ''; position: absolute; inset-block-start: 50%; inset-inline-start: 50%;
+  transform: translate(-50%, -50%);
+  inline-size: 82%; aspect-ratio: 1; border-radius: 50%;
   background: radial-gradient(circle, color-mix(in srgb, var(--acao) 38%, transparent), transparent 68%);
   filter: blur(6px);
 }
 .orbita {
-  position: absolute; inline-size: 75%; aspect-ratio: 1; border-radius: 50%;
+  position: absolute; inset-block-start: 50%; inset-inline-start: 50%;
+  inline-size: 75%; aspect-ratio: 1; border-radius: 50%;
   border: 1px solid color-mix(in srgb, var(--acao) 55%, transparent);
-  transform: rotateX(65deg) rotate(-22deg);
+  /* O recuo vai dentro do transform: separado, numa propriedade `translate`,
+     não estava a ser aplicado e as órbitas saíam meia-largura para o canto. */
+  transform: translate(-50%, -50%) rotateX(65deg) rotate(-22deg);
 }
-.orbita.dois { inline-size: 98%; transform: rotateY(65deg) rotate(25deg); opacity: .5; }
+.orbita.dois { inline-size: 98%; transform: translate(-50%, -50%) rotateY(65deg) rotate(25deg); opacity: .5; }
 .atomoNumero {
   position: relative; font-weight: 850; font-size: clamp(4.5rem, 9vw, 9rem);
-  letter-spacing: -.12em; color: #fff; line-height: 1;
+  /* O website usa Manrope a -.12em; na Inter esse valor cola o I ao R. */
+  letter-spacing: -.055em; color: #fff; line-height: 1;
 }
 .atomoNumero span { color: var(--acao); }
 .atomoEtiqueta {
@@ -141,6 +147,8 @@
 .seccao { padding-block: clamp(4rem, 8vw, 7.5rem); }
 .seccaoClara { background: var(--superficie); }
 .cabecalho { display: grid; gap: var(--e-3); max-width: 44rem; }
+/* Dentro de uma coluna o espaço vem do gap; solto numa secção, precisa do seu. */
+.cabecalhoSolto { margin-block-end: var(--e-7); }
 .olho { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--acao); }
 .seccaoTitulo { font-size: var(--t-4xl); font-weight: 780; letter-spacing: -.04em; line-height: 1.04; }
 .seccaoTexto { font-size: var(--t-lg); color: var(--texto-suave); line-height: 1.6; }
