@@ -71,7 +71,7 @@
   font-size: var(--t-xs); font-weight: 650; letter-spacing: .05em; text-transform: uppercase;
 }
 .selo span { inline-size: .4rem; block-size: .4rem; border-radius: 50%; background: var(--acao); box-shadow: 0 0 0 4px color-mix(in srgb, var(--acao) 28%, transparent); }
-.heroiTitulo { font-size: clamp(2.5rem, 1.4rem + 4vw, 4.25rem); font-weight: 800; letter-spacing: -.045em; line-height: .96; }
+.heroiTitulo { font-size: clamp(2.5rem, 1.4rem + 4vw, 4.25rem); font-weight: 800; letter-spacing: -.075em; line-height: .96; }
 .heroiTitulo em { font-style: normal; color: color-mix(in srgb, var(--acao) 82%, #fff); }
 /* Parágrafo e linha do valor partilham a mesma medida, para o fim do botão
    cair na mesma vertical onde o texto acaba. */
@@ -120,8 +120,7 @@
 .orbita.dois { inline-size: 98%; transform: translate(-50%, -50%) rotateY(65deg) rotate(25deg); opacity: .5; }
 .atomoNumero {
   position: relative; font-weight: 850; font-size: clamp(4.5rem, 9vw, 9rem);
-  /* O website usa Manrope a -.12em; na Inter esse valor cola o I ao R. */
-  letter-spacing: -.055em; color: #fff; line-height: 1;
+  letter-spacing: -.12em; color: #fff; line-height: 1;
 }
 .atomoNumero span { color: var(--acao); }
 .atomoEtiqueta {
@@ -154,7 +153,7 @@
 /* Dentro de uma coluna o espaço vem do gap; solto numa secção, precisa do seu. */
 .cabecalhoSolto { margin-block-end: var(--e-7); }
 .olho { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--acao); }
-.seccaoTitulo { font-size: var(--t-4xl); font-weight: 780; letter-spacing: -.04em; line-height: 1.04; }
+.seccaoTitulo { font-size: var(--t-4xl); font-weight: 780; letter-spacing: -.065em; line-height: 1.04; }
 .seccaoTexto { font-size: var(--t-lg); color: var(--texto-suave); line-height: 1.6; }
 
 /* ---------------- Narrativa por scroll ---------------- */
@@ -199,7 +198,7 @@
   background: var(--acao); color: #fff;
   font-weight: 750; font-size: var(--t-sm); font-variant-numeric: tabular-nums;
 }
-.passoTitulo { font-size: clamp(1.375rem, .4rem + 2.8vh, 2.5rem); font-weight: 760; letter-spacing: -.035em; line-height: 1.1; }
+.passoTitulo { font-size: clamp(1.375rem, .4rem + 2.8vh, 2.5rem); font-weight: 760; letter-spacing: -.055em; line-height: 1.1; }
 .passoTexto { font-size: clamp(.9375rem, .6rem + .95vh, 1.1875rem); color: var(--texto-suave); line-height: 1.55; max-inline-size: 44ch; }
 .passoLista { display: grid; gap: var(--e-2); }
 .passoLista li { display: flex; gap: var(--e-3); align-items: flex-start; color: var(--texto-suave); font-size: clamp(.875rem, .6rem + .75vh, 1.0625rem); }
@@ -354,7 +353,7 @@
   border-block-start: 1px solid rgb(255 255 255 / .16); padding-block-start: var(--e-4);
 }
 .contaTotalRotulo { font-size: var(--t-base); color: rgb(234 241 252 / .72); }
-.contaTotalValor { font-size: clamp(2rem, 1.4rem + 2vw, 2.75rem); font-weight: 800; letter-spacing: -.04em; font-variant-numeric: tabular-nums; line-height: 1; }
+.contaTotalValor { font-size: clamp(2rem, 1.4rem + 2vw, 2.75rem); font-weight: 800; letter-spacing: -.06em; font-variant-numeric: tabular-nums; line-height: 1; }
 .contaNota { font-size: var(--t-xs); color: rgb(234 241 252 / .5); line-height: 1.6; }
 .contaVazio { color: rgb(234 241 252 / .62); font-size: var(--t-base); }
 
@@ -367,7 +366,7 @@
 /* ---------------- Chamada final ---------------- */
 .final { padding-block: clamp(4rem, 8vw, 7rem); background: var(--tinta-900); color: #fff; text-align: center; }
 .finalInterior { display: grid; gap: var(--e-5); place-items: center; }
-.finalTitulo { font-size: var(--t-4xl); font-weight: 790; letter-spacing: -.04em; max-width: 18ch; }
+.finalTitulo { font-size: var(--t-4xl); font-weight: 790; letter-spacing: -.065em; max-width: 18ch; }
 .finalTexto { color: rgb(234 241 252 / .72); max-width: 50ch; font-size: var(--t-lg); }
 
 /* ---------------- Rodapé: o mesmo do website ---------------- */
