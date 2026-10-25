@@ -75,16 +75,18 @@ export default function Pagina() {
               </p>
 
               <div className={e.linhaValor}>
-                <span className={e.valorGrupo}>
-                  <span className={`${e.valorNumero} numero`}>18,50 €</span>
-                  <span className={e.valorRotulo}>Desde, com IVA</span>
+                <span className={e.valores}>
+                  <span className={e.valorGrupo}>
+                    <span className={`${e.valorNumero} numero`}>18,50 €</span>
+                    <span className={e.valorRotulo}>Desde, com IVA</span>
+                  </span>
+                  <span className={e.separadorValor} aria-hidden="true" />
+                  <span className={e.valorGrupo}>
+                    <span className={e.valorNumero}>100% online</span>
+                    <span className={e.valorRotulo}>Sem deslocações</span>
+                  </span>
                 </span>
-                <span className={e.separadorValor} aria-hidden="true" />
-                <span className={e.valorGrupo}>
-                  <span className={e.valorNumero}>100% online</span>
-                  <span className={e.valorRotulo}>Sem deslocações</span>
-                </span>
-                <Link href="/registar" className={`btn btn-lg ${e.btnClaro}`}>
+                <Link href="/registar" className={`btn ${e.btnClaro}`}>
                   Submeter o meu IRS
                 </Link>
               </div>
@@ -103,30 +105,23 @@ export default function Pagina() {
           </div>
         </section>
 
-        <section className={`${e.seccao} ${e.seccaoClara}`} id="como-funciona">
+        <section className={e.seccaoClara} id="como-funciona">
           <div className="envolve">
-            <div className={e.cabecalho}>
-              <p className={e.olho}>Como funciona</p>
-              <h2 className={e.seccaoTitulo}>Cinco passos, do registo à submissão.</h2>
-              <p className={e.seccaoTexto}>
-                Cada passo fica guardado. Pode parar a meio e voltar quando quiser — nada se perde.
-              </p>
-            </div>
-            <Narrativa />
+            <Narrativa
+              olho="Como funciona"
+              titulo="Cinco passos, do registo à submissão."
+              texto="Cada passo fica guardado. Pode parar a meio e voltar quando quiser — nada se perde."
+            />
           </div>
         </section>
 
         <section className={e.seccao} id="precos">
           <div className="envolve">
-            <div className={e.cabecalho}>
-              <p className={e.olho}>Preços</p>
-              <h2 className={e.seccaoTitulo}>Calcule o seu IRS antes de começar.</h2>
-              <p className={e.seccaoTexto}>
-                Diga o que recebeu em 2026 e veja o preço montar-se, rubrica a rubrica. Sem registo e sem
-                compromisso.
-              </p>
-            </div>
-            <Configurador />
+            <Configurador
+              olho="Preços"
+              titulo="Calcule o seu IRS antes de começar."
+              texto="Diga o que recebeu em 2026 e veja o preço montar-se, rubrica a rubrica. Sem registo e sem compromisso."
+            />
           </div>
         </section>
 

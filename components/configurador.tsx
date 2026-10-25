@@ -132,7 +132,9 @@ function Contador({
   );
 }
 
-export function Configurador() {
+type PropsConfigurador = { olho: string; titulo: string; texto: string };
+
+export function Configurador({ olho, titulo, texto }: PropsConfigurador) {
   const [escolhas, definirEscolhas] = useState<Escolhas>(INICIAL);
   const mudar = <C extends keyof Escolhas>(campo: C, valor: Escolhas[C]) =>
     definirEscolhas((atual) => ({ ...atual, [campo]: valor }));
@@ -150,6 +152,13 @@ export function Configurador() {
   return (
     <div className={e.precario}>
       <div className={e.escolhas}>
+        {/* O título vive na coluna, para a conta ao lado começar à mesma altura. */}
+        <div className={e.cabecalho}>
+          <p className={e.olho}>{olho}</p>
+          <h2 className={e.seccaoTitulo}>{titulo}</h2>
+          <p className={e.seccaoTexto}>{texto}</p>
+        </div>
+
         <div className={e.grupo}>
           <p className={e.grupoTitulo}>Que rendimentos teve em 2026?</p>
           <div className={e.opcoes}>

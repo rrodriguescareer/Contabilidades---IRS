@@ -130,62 +130,86 @@ const PASSOS: Passo[] = [
   },
 ];
 
-export function Narrativa() {
-  const [ativo, setAtivo] = useState(0);
-  const referencias = useRef<(HTMLElement | null)[]>([]);
+type PropsNarrativa = { olho: string; titulo: string; texto: string };
 
+export function Narrativa({ olho, titulo, texto }: PropsNarrativa) {
+  const [ativo, setAtivo] = useState(0);
+  const palco = useRef<HTMLDivElement>(null);
+
+  /* A etapa sai da posição do palco, não de um IntersectionObserver: com
+     rootMargin de -50% em cima e em baixo a raiz fica sem altura nenhuma, a
+     intersecção tem área zero e o observador nunca assinala nada. */
   useEffect(() => {
-    const observador = new IntersectionObserver(
-      (entradas) => {
-        // O passo cuja faixa central está mais visível manda no visor.
-        const visivel = entradas
-          .filter((entrada) => entrada.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
-        if (!visivel) return;
-        const indice = referencias.current.indexOf(visivel.target as HTMLElement);
-        if (indice >= 0) setAtivo(indice);
-      },
-      { rootMargin: '-45% 0px -45% 0px', threshold: [0, 0.25, 0.5, 1] },
-    );
-    referencias.current.forEach((no) => no && observador.observe(no));
-    return () => observador.disconnect();
+    const no = palco.current;
+    if (!no) return;
+
+    const medir = () => {
+      const caixa = no.getBoundingClientRect();
+      const percurso = caixa.height - window.innerHeight;
+      if (percurso <= 0) return;
+      const andado = Math.min(Math.max(-caixa.top, 0), percurso);
+      const indice = Math.min(PASSOS.length - 1, Math.floor((andado / percurso) * PASSOS.length));
+      setAtivo((atual) => (atual === indice ? atual : indice));
+    };
+    // Uma leitura de posição por evento de scroll. Chega, e não depende de
+    // requestAnimationFrame, que o browser suspende em separadores em segundo
+    // plano — a etapa ficava para trás.
+    medir();
+    window.addEventListener('scroll', medir, { passive: true });
+    window.addEventListener('resize', medir);
+    return () => {
+      window.removeEventListener('scroll', medir);
+      window.removeEventListener('resize', medir);
+    };
   }, []);
 
   return (
-    <div className={e.palco}>
-      <div className={e.passos}>
-        {PASSOS.map((passo, indice) => (
-          <article
-            key={passo.titulo}
-            ref={(no) => {
-              referencias.current[indice] = no;
-            }}
-            className={e.passo}
-            data-ativo={indice === ativo}
-          >
-            <span className={e.passoNumero} aria-hidden="true">
-              {String(indice + 1).padStart(2, '0')}
-            </span>
-            <h3 className={e.passoTitulo}>{passo.titulo}</h3>
-            <p className={e.passoTexto}>{passo.texto}</p>
-            <ul className={e.passoLista} role="list">
-              {passo.pontos.map((ponto) => (
-                <li key={ponto}>{ponto}</li>
-              ))}
-            </ul>
-          </article>
-        ))}
-      </div>
+    <div className={e.palco} ref={palco} style={{ '--passos': PASSOS.length } as React.CSSProperties}>
+      <div className={e.palcoFixo}>
+        <div className={e.palcoTexto}>
+          <div className={e.cabecalho}>
+            <p className={e.olho}>{olho}</p>
+            <h2 className={e.seccaoTitulo}>{titulo}</h2>
+            <p className={e.seccaoTexto}>{texto}</p>
+          </div>
 
-      <div className={e.visorColuna} aria-hidden="true">
-        <div className={e.visor}>
-          <div className={e.visorEcra}>
-            <div className={e.visorBarra}>
-              <span>IRS 2026</span>
-              <span>RR.</span>
-            </div>
-            <div className={e.visorCorpo}>
-              <div key={ativo}>{PASSOS[ativo].visor}</div>
+          <div className={e.contagem} aria-hidden="true">
+            {PASSOS.map((passo, indice) => (
+              <span key={passo.titulo} className={e.contagemPonto} data-ativo={indice === ativo} />
+            ))}
+          </div>
+
+          <div className={e.passosPilha}>
+            {PASSOS.map((passo, indice) => (
+              <article
+                key={passo.titulo}
+                className={e.passo}
+                data-ativo={indice === ativo}
+                aria-hidden={indice !== ativo}
+              >
+                <span className={e.passoNumero}>{String(indice + 1).padStart(2, '0')}</span>
+                <h3 className={e.passoTitulo}>{passo.titulo}</h3>
+                <p className={e.passoTexto}>{passo.texto}</p>
+                <ul className={e.passoLista} role="list">
+                  {passo.pontos.map((ponto) => (
+                    <li key={ponto}>{ponto}</li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </div>
+
+        <div className={e.visorColuna} aria-hidden="true">
+          <div className={e.visor}>
+            <div className={e.visorEcra}>
+              <div className={e.visorBarra}>
+                <span>IRS 2026</span>
+                <span>RR.</span>
+              </div>
+              <div className={e.visorCorpo}>
+                <div key={ativo}>{PASSOS[ativo].visor}</div>
+              </div>
             </div>
           </div>
         </div>

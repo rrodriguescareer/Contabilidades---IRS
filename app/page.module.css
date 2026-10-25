@@ -73,16 +73,22 @@
 .selo span { inline-size: .4rem; block-size: .4rem; border-radius: 50%; background: var(--acao); box-shadow: 0 0 0 4px color-mix(in srgb, var(--acao) 28%, transparent); }
 .heroiTitulo { font-size: clamp(2.5rem, 1.4rem + 4vw, 4.25rem); font-weight: 800; letter-spacing: -.045em; line-height: .96; }
 .heroiTitulo em { font-style: normal; color: color-mix(in srgb, var(--acao) 82%, #fff); }
-.heroiTexto { font-size: clamp(1.0625rem, .9rem + .6vw, 1.3125rem); line-height: 1.55; color: rgb(234 241 252 / .78); max-width: 46ch; }
-/* Valor, promessa e ação na mesma linha, encostados à margem do logótipo. */
+/* Parágrafo e linha do valor partilham a mesma medida, para o fim do botão
+   cair na mesma vertical onde o texto acaba. */
+.heroiTexto2 { --medida: 38rem; }  /* em rem: 'ch' muda com a letra de cada elemento */
+.heroiTexto { font-size: clamp(1.0625rem, .9rem + .6vw, 1.3125rem); line-height: 1.55; color: rgb(234 241 252 / .78); max-inline-size: var(--medida); }
+/* Valor, promessa e ação na mesma linha, encostados à margem do logótipo.
+   O botão vai ao fim da medida do parágrafo; os números ficam à esquerda. */
 .linhaValor {
-  display: flex; flex-wrap: wrap; align-items: center;
-  gap: var(--e-4) clamp(.875rem, 1.6vw, 1.25rem);
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+  gap: var(--e-4) clamp(1rem, 2vw, 1.75rem);
   padding-block-start: var(--e-2);
+  max-inline-size: var(--medida);
 }
+.valores { display: flex; align-items: center; gap: clamp(1rem, 2vw, 1.75rem); }
 .valorGrupo { display: grid; gap: .125rem; }
-.valorNumero { font-size: clamp(2rem, 1.4rem + 2vw, 2.75rem); font-weight: 800; letter-spacing: -.04em; line-height: 1; }
-.valorRotulo { font-size: var(--t-xs); text-transform: uppercase; letter-spacing: .1em; color: rgb(234 241 252 / .5); font-weight: 650; }
+.valorNumero { font-size: clamp(1.25rem, 1.05rem + .65vw, 1.5rem); font-weight: 750; letter-spacing: -.03em; line-height: 1.15; }
+.valorRotulo { font-size: .6875rem; text-transform: uppercase; letter-spacing: .1em; color: rgb(234 241 252 / .5); font-weight: 650; }
 .separadorValor { inline-size: 1px; align-self: stretch; background: rgb(255 255 255 / .16); }
 @media (max-width: 620px) { .separadorValor { display: none; } }
 
@@ -134,43 +140,67 @@
 /* ---------------- Secções ---------------- */
 .seccao { padding-block: clamp(4rem, 8vw, 7.5rem); }
 .seccaoClara { background: var(--superficie); }
-.cabecalho { display: grid; gap: var(--e-3); max-width: 44rem; margin-block-end: var(--e-7); }
+.cabecalho { display: grid; gap: var(--e-3); max-width: 44rem; }
 .olho { font-size: var(--t-xs); font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--acao); }
 .seccaoTitulo { font-size: var(--t-4xl); font-weight: 780; letter-spacing: -.04em; line-height: 1.04; }
 .seccaoTexto { font-size: var(--t-lg); color: var(--texto-suave); line-height: 1.6; }
 
 /* ---------------- Narrativa por scroll ---------------- */
-.palco { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(2rem, 6vw, 6rem); align-items: start; }
-.passos { display: grid; }
-/* Cada passo começa no seu topo, na mesma linha onde o visor fica preso.
-   Com justify-content:center o texto caía a meio e desalinhava do telemóvel. */
-.passo {
-  min-block-size: 82vh; scroll-margin-block-start: 5.5rem; display: flex; flex-direction: column; justify-content: flex-start; gap: var(--e-4);
-  padding-block-end: var(--e-6);
-  opacity: .32; transition: opacity var(--normal) var(--curva);
+/* O palco é alto para dar percurso ao scroll; lá dentro nada se move.
+   Fica preso o título, fica preso o telemóvel, e só a etapa é trocada.
+   Assim nenhum passo parte a meio nem sai fora do ecrã. */
+.palco { position: relative; block-size: calc(var(--passos, 5) * 88vh); }
+
+.palcoFixo {
+  position: sticky; inset-block-start: 0;
+  block-size: 100dvh;
+  display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: clamp(2rem, 5vw, 5rem);
+  align-content: start;
+  /* A folga é declarada uma vez e reaproveitada pelo telemóvel, para os dois
+     não saírem do sítio quando uma delas mudar. */
+  --folga: 8.5rem;
+  padding-block: 6rem 2.5rem;
 }
-.passo[data-ativo='true'] { opacity: 1; }
+
+.palcoTexto { display: grid; align-content: start; gap: clamp(1.5rem, 3vh, 2.75rem); min-inline-size: 0; }
+
+/* As etapas ocupam todas a mesma célula: trocam, não empilham. */
+.passosPilha { display: grid; }
+.passo {
+  grid-area: 1 / 1; display: flex; flex-direction: column; gap: var(--e-4);
+  opacity: 0; visibility: hidden; transform: translateY(14px);
+  transition: opacity var(--normal) var(--curva), transform var(--normal) var(--curva), visibility var(--normal);
+}
+.passo[data-ativo='true'] { opacity: 1; visibility: visible; transform: none; }
+
 .passoNumero {
   display: inline-flex; align-items: center; justify-content: center;
-  inline-size: 2.75rem; block-size: 2.75rem; border-radius: var(--r-pill);
-  border: 1px solid var(--linha-forte); background: var(--superficie);
-  font-weight: 750; font-size: var(--t-base); font-variant-numeric: tabular-nums;
-  transition: background var(--normal) var(--curva), color var(--normal) var(--curva), border-color var(--normal) var(--curva);
+  inline-size: 2.5rem; block-size: 2.5rem; border-radius: var(--r-pill);
+  background: var(--acao); color: #fff;
+  font-weight: 750; font-size: var(--t-sm); font-variant-numeric: tabular-nums;
 }
-.passo[data-ativo='true'] .passoNumero { background: var(--acao); color: #fff; border-color: var(--acao); }
-.passoTitulo { font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.25rem); font-weight: 760; letter-spacing: -.035em; line-height: 1.1; }
-.passoTexto { font-size: var(--t-lg); color: var(--texto-suave); line-height: 1.6; max-width: 38ch; }
-.passoLista { display: grid; gap: var(--e-2); margin-block-start: var(--e-2); }
+.passoTitulo { font-size: clamp(1.5rem, 1rem + 1.4vw, 2.125rem); font-weight: 760; letter-spacing: -.035em; line-height: 1.1; }
+.passoTexto { font-size: clamp(1rem, .95rem + .25vw, 1.125rem); color: var(--texto-suave); line-height: 1.6; max-inline-size: 42ch; }
+.passoLista { display: grid; gap: var(--e-2); }
 .passoLista li { display: flex; gap: var(--e-3); align-items: flex-start; color: var(--texto-suave); font-size: var(--t-base); }
 .passoLista li::before {
-  content: ''; flex: none; inline-size: .45rem; block-size: .45rem; border-radius: 50%;
+  content: ''; flex: none; inline-size: .4rem; block-size: .4rem; border-radius: 50%;
   background: var(--acao); margin-block-start: .5rem;
 }
 
-/* Preso ao topo, à altura do título da secção, e não a meio do ecrã. */
-.visorColuna { position: sticky; inset-block-start: 5.5rem; display: grid; justify-items: center; }
+/* Marcas de posição: mostram em que etapa se vai, sem ocupar espaço. */
+.contagem { display: flex; gap: var(--e-2); align-items: center; }
+.contagemPonto { inline-size: 1.5rem; block-size: 3px; border-radius: var(--r-pill); background: var(--linha-forte); transition: background var(--normal) var(--curva); }
+.contagemPonto[data-ativo='true'] { background: var(--acao); }
+
+/* ---- Telemóvel ---- */
+.visorColuna { display: grid; place-items: start center; min-inline-size: 0; }
+/* A largura manda, e a altura sai do formato: com block-size em percentagem a
+   medida resolvia contra a célula da grelha e o aparelho passava do ecrã. */
 .visor {
-  inline-size: min(100%, 21.5rem); aspect-ratio: 9 / 17; max-block-size: calc(100dvh - 8rem);
+  inline-size: min(100%, calc((100dvh - var(--folga)) * 9 / 17));
+  block-size: auto; aspect-ratio: 9 / 17;
   background: var(--tinta-900); border-radius: 2.25rem; padding: .5rem;
   box-shadow: var(--sombra-3), 0 0 0 1px rgb(10 35 68 / .12);
   position: relative;
@@ -178,13 +208,13 @@
 .visorEcra {
   block-size: 100%; border-radius: 1.85rem; overflow: hidden;
   background: var(--branco-gelo); display: flex; flex-direction: column;
-  position: relative;
 }
 .visorBarra {
   display: flex; align-items: center; justify-content: space-between;
   padding: .875rem 1.25rem .5rem; font-size: .6875rem; font-weight: 650; color: var(--tinta-800);
+  flex: none;
 }
-.visorCorpo { flex: 1; padding: var(--e-4); display: grid; align-content: start; gap: var(--e-3); overflow: hidden; }
+.visorCorpo { flex: 1; min-block-size: 0; padding: var(--e-4); display: grid; align-content: start; gap: var(--e-3); overflow: hidden; }
 .visorPainel { display: grid; gap: var(--e-3); align-content: start; animation: entra var(--normal) var(--curva); }
 @keyframes entra { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 .visorTitulo { font-size: var(--t-xs); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--texto-ténue); }
@@ -194,7 +224,6 @@
 }
 .visorCartao strong { font-size: .8125rem; font-weight: 650; }
 .visorCartao span { font-size: .6875rem; color: var(--texto-suave); }
-.visorLinhaFalsa { block-size: .5rem; border-radius: var(--r-pill); background: var(--superficie-afundada); }
 .visorBarraProgresso { block-size: .375rem; border-radius: var(--r-pill); background: var(--superficie-afundada); overflow: hidden; }
 .visorBarraProgresso i { display: block; block-size: 100%; background: var(--acao); border-radius: inherit; transition: inline-size var(--normal) var(--curva); }
 .visorPastilha {
@@ -202,17 +231,32 @@
   padding: .1875rem .5rem; border-radius: var(--r-pill);
   font-size: .625rem; font-weight: 700; background: var(--acao-suave); color: var(--acao-forte);
 }
-.visorRodape { padding: var(--e-4); display: grid; gap: var(--e-2); }
 .visorBotao {
   display: grid; place-items: center; padding: .6875rem; border-radius: var(--r-pill);
   background: var(--acao); color: #fff; font-size: .8125rem; font-weight: 650;
 }
 
-@media (max-width: 900px) {
-  .palco { grid-template-columns: 1fr; gap: var(--e-5); }
+/* Ecrãs baixos: o telemóvel encolhe antes de o texto apertar. */
+@media (max-height: 760px) {
+  .palcoFixo { padding-block: 5rem 1.5rem; --folga: 6.5rem; }
+  .passoTexto { font-size: 1rem; }
+}
+
+/* No telemóvel não há palco: os passos lêem-se em sequência. */
+@media (max-width: 920px) {
+  .palco { block-size: auto; }
+  .palcoFixo {
+    position: static; block-size: auto; grid-template-columns: 1fr;
+    padding-block: 0; gap: var(--e-6);
+  }
   .visorColuna { display: none; }
-  .passo { min-block-size: 0; opacity: 1; padding-block: var(--e-5); border-block-start: 1px solid var(--linha); }
-  .passos .passo:first-child { border-block-start: 0; }
+  .passosPilha { display: grid; gap: var(--e-6); }
+  .passo {
+    grid-area: auto; opacity: 1; visibility: visible; transform: none;
+    padding-block-start: var(--e-5); border-block-start: 1px solid var(--linha);
+  }
+  .passosPilha .passo:first-child { border-block-start: 0; padding-block-start: 0; }
+  .contagem { display: none; }
 }
 
 /* ---------------- Preços: configurador ---------------- */
@@ -261,7 +305,8 @@
 .contadorValor { min-inline-size: 2rem; text-align: center; font-weight: 700; font-variant-numeric: tabular-nums; }
 
 /* ---- Conta, colada ao topo enquanto se escolhe ---- */
-.conta { position: sticky; inset-block-start: var(--e-5); display: grid; gap: var(--e-4); }
+.conta { position: sticky; inset-block-start: 6rem; display: grid; gap: var(--e-4); }
+@media (max-width: 920px) { .conta { position: static; } }
 .contaCartao {
   background: var(--tinta-900); color: #fff; border-radius: var(--r-xl);
   padding: clamp(1.5rem, 3vw, 2.25rem); display: grid; gap: var(--e-4);
