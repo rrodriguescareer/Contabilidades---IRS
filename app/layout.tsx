@@ -19,7 +19,7 @@ const titulos = Manrope({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://contabilidades-irs.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://irs.rr-contabilidade.com'),
   title: { default: 'IRS 2026 · RR.', template: '%s · RR.' },
   description:
     'Entregue o seu IRS com acompanhamento de um contabilista certificado. Recolha, revisão e submissão num só lugar.',
