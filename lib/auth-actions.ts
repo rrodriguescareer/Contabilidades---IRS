@@ -6,6 +6,7 @@ import { IS_MANAGEMENT } from './app';
 import { acceptedLegal,LEGAL_VERSION } from './legal';
 import { identity } from './auth';
 import { validEmail } from './validation';
+import {senhaComprometida,AVISO_SENHA_COMPROMETIDA} from './password-leak';
 const text = (form: FormData, name: string) => String(form.get(name) || '').trim();
 function error(message: string, path='/entrar'): never { redirect(`${path}?erro=${encodeURIComponent(message)}`); }
 export async function signIn(form:FormData){
@@ -31,6 +32,7 @@ export async function signUp(form: FormData) {
   if(!acceptedLegal(form))error('Tem de aceitar os Termos e Condições e a Política de Privacidade.','/registar');
   const email=text(form,'email'),password=String(form.get('password')||'');
   if(!validEmail(email)||password.length<12||password.length>128)error('Indique um email válido e uma palavra-passe entre 12 e 128 caracteres.','/registar');
+  if(await senhaComprometida(password))error(AVISO_SENHA_COMPROMETIDA,'/registar');
   const origin=siteUrl();if(!origin)error('O registo está temporariamente indisponível. Contacte o profissional.','/registar');
   const client=await supabase();
   const {error:failure}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${origin}/auth/callback`,data:{terms_accepted:true,terms_version:LEGAL_VERSION,privacy_version:LEGAL_VERSION}}});
@@ -47,6 +49,7 @@ export async function recover(form: FormData) {
 }
 export async function changePassword(form: FormData) {
   const password=String(form.get('password')||'');if(password.length<12||password.length>128)error('Use pelo menos 12 caracteres.','/nova-password');
+  if(await senhaComprometida(password))error(AVISO_SENHA_COMPROMETIDA,'/nova-password');
   const client=await supabase();const {data:{user}}=await client.auth.getUser();if(!user)error('Abra uma ligação de recuperação válida.');
   const {error: failure}=await client.auth.updateUser({password});if(failure)error('Não foi possível alterar a palavra-passe.','/nova-password');
   redirect('/app');

@@ -4,6 +4,7 @@ import {revalidatePath} from 'next/cache';
 import {identity} from './auth';
 import {personError,validEmail} from './validation';
 import {siteUrl} from './supabase';
+import {senhaComprometida,AVISO_SENHA_COMPROMETIDA} from './password-leak';
 const value=(form:FormData,key:string)=>String(form.get(key)||'').trim();
 function fail(message:string,path='/onboarding'):never{redirect(`${path}?erro=${encodeURIComponent(message)}`);}
 export async function saveProfile(form:FormData){
@@ -30,6 +31,7 @@ export async function changeEmail(form:FormData){
 export async function changeOwnPassword(form:FormData){
  const {client,user}=await identity();const current=String(form.get('current_password')||''),password=String(form.get('password')||'');
  if(password.length<12||password.length>128||password!==String(form.get('confirmation')||''))fail('Confirme a nova palavra-passe, entre 12 e 128 caracteres.','/perfil');
+ if(await senhaComprometida(password))fail(AVISO_SENHA_COMPROMETIDA,'/perfil');
  const {error:login}=await client.auth.signInWithPassword({email:user.email!,password:current});if(login)fail('A palavra-passe atual não foi confirmada.','/perfil');
  const {error}=await client.auth.updateUser({password});if(error)fail('Não foi possível alterar a palavra-passe.','/perfil');
  redirect('/perfil?mensagem=Palavra-passe%20alterada.');
