@@ -3,7 +3,7 @@
    por isso nada de respostas autenticadas em cache. Guardamos apenas o que é
    estático e uma página de apoio para quando a rede falha. */
 
-const VERSAO = 'rr-irs-v1';
+const VERSAO = 'rr-irs-v2';
 const ESTATICO = `${VERSAO}-estatico`;
 const OFFLINE = '/offline';
 

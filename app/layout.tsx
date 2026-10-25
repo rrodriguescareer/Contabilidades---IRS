@@ -33,6 +33,23 @@ export const metadata: Metadata = {
     apple: '/apple-touch-icon.png',
   },
   formatDetection: { telephone: false },
+  // O cartão que aparece quando alguém partilha a ligação. Sem isto, a
+  // partilha saía uma caixa cinzenta com o endereço.
+  openGraph: {
+    type: 'website',
+    locale: 'pt_PT',
+    siteName: 'IRS 2026 · RR.',
+    title: 'O seu IRS, sem surpresas.',
+    description:
+      'Entregue o seu IRS com acompanhamento de um contabilista certificado. Recolha, revisão e submissão num só lugar.',
+    images: [{ url: '/og.png', width: 1200, height: 630, alt: 'RR. — Contabilidade · Fiscalidade' }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'O seu IRS, sem surpresas.',
+    description: 'Entrega acompanhada por um contabilista certificado.',
+    images: ['/og.png'],
+  },
 };
 
 export const viewport: Viewport = {
