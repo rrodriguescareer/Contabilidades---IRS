@@ -132,9 +132,12 @@
   font-size: .64rem; font-weight: 850; letter-spacing: .09em; color: rgb(234 241 252 / .9);
   animation: flutuar 6s ease-in-out infinite;
 }
-.atomoA { inset-block-start: 14%; inset-inline-start: 0; }
-.atomoB { inset-inline-end: 0; inset-block-start: 40%; animation-delay: -2s; }
-.atomoC { inset-block-end: 14%; inset-inline-start: 10%; animation-delay: -4s; }
+/* Cada etiqueta assenta numa órbita: a primeira e a terceira nos extremos da
+   elipse vertical, a segunda no bordo da horizontal. A elipse vertical está
+   inclinada 25°, por isso o topo cai à direita do centro e o fundo à esquerda. */
+.atomoA { inset-block-start: 3%; inset-inline-start: 54%; }
+.atomoB { inset-inline-end: 0; inset-block-start: 44%; animation-delay: -2s; }
+.atomoC { inset-block-end: 3%; inset-inline-start: 18%; animation-delay: -4s; }
 @keyframes flutuar { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-9px); } }
 @media (max-width: 980px) { .atomo { min-block-size: 320px; } .atomoEtiqueta { font-size: .55rem; padding: 9px 12px; } }
 @media (max-width: 560px) { .atomo { display: none; } }

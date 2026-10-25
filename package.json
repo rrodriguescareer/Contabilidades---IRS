@@ -14,20 +14,22 @@
     "test:dashboard": "node --test tests/dashboard.test.mjs",
     "test:auth": "node --test tests/auth-access.test.mjs",
     "test:secrets": "node --test tests/secret-crypto.test.mjs",
-    "test:password": "node --test tests/password-leak.test.mjs"
+    "test:password": "node --test tests/password-leak.test.mjs",
+    "test:comprimir": "node --test tests/comprimir.test.mjs"
   },
   "dependencies": {
+    "@supabase/ssr": "0.12.7",
+    "@supabase/supabase-js": "2.118.0",
     "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "@supabase/ssr": "0.12.7",
-    "@supabase/supabase-js": "2.118.0"
+    "sharp": "^0.34.4"
   },
   "devDependencies": {
-    "typescript": "^5.9.3",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
-    "@types/react-dom": "^19.0.0"
+    "@types/react-dom": "^19.0.0",
+    "typescript": "^5.9.3"
   },
   "engines": {
     "node": "24.x"

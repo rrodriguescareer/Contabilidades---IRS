@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { identity } from './auth';
 import { personError } from './validation';
 import { uuid, categories, states, relations, documentKinds } from './data';
+import { comprimirDocumento, nomeGuardado } from './comprimir';
 
 /* As ações devolvem um resultado em vez de redirecionarem.
    Quem chama volta a pedir só a vista afetada, o que mantém o ecrã no sítio
@@ -200,15 +201,19 @@ export async function enviarDocumento(_anterior: Resultado | null, form: FormDat
   const mime = tipoReal(bytes);
   if (!mime) return falha('O conteúdo do ficheiro não corresponde a PDF, JPEG ou PNG.');
 
+  // O resumo é do ficheiro que a pessoa escolheu, não do convertido: assim o
+  // mesmo original continua a ser reconhecido como repetido.
   const hash = createHash('sha256').update(bytes).digest('hex');
+  const guardar = await comprimirDocumento(bytes, mime);
+
   const { data: preparado, error: metadados } = await client.rpc('prepare_irs_document', {
     account: conta,
     process: processo,
     record: rendimento || null,
     doc_kind: tipo,
-    original_name: ficheiro.name.slice(0, 250),
-    mime,
-    size_bytes: ficheiro.size,
+    original_name: nomeGuardado(ficheiro.name, guardar.extensao),
+    mime: guardar.mime,
+    size_bytes: guardar.bytes.byteLength,
     hash,
   });
   if (metadados || !preparado) {
@@ -219,7 +224,7 @@ export async function enviarDocumento(_anterior: Resultado | null, form: FormDat
   if (!reused) {
     const { error: upload } = await client.storage
       .from('irs-documents')
-      .upload(path, bytes, { contentType: mime, upsert: false });
+      .upload(path, guardar.bytes, { contentType: guardar.mime, upsert: false });
     if (upload) {
       return falha('O carregamento falhou. O envio ficou pendente; contacte o contabilista antes de repetir.');
     }
@@ -227,7 +232,12 @@ export async function enviarDocumento(_anterior: Resultado | null, form: FormDat
 
   const { error: terminado } = await client.from('documents').update({ state: 'uploaded' }).eq('id', id);
   if (terminado) return falha('O ficheiro foi recebido mas falta confirmar o estado. Contacte o contabilista.');
-  return feito(reused ? 'Documento já existia e foi reaproveitado.' : 'Documento recebido.');
+  if (reused) return feito('Documento já existia e foi reaproveitado.');
+  if (guardar.convertido) {
+    const poupanca = Math.round((1 - guardar.bytes.byteLength / bytes.byteLength) * 100);
+    return feito(`Documento recebido. Guardado em WebP, menos ${poupanca}% de espaço.`);
+  }
+  return feito('Documento recebido.');
 }
 
 export async function abrirDocumento(_anterior: Resultado | null, form: FormData): Promise<Resultado> {
