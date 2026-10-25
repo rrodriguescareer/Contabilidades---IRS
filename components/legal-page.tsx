@@ -5,7 +5,7 @@ export default function PaginaLegal({ title, children }: { title: string; childr
   return (
     <main id="principal" className="envolve" style={{ paddingBlock: 'var(--e-6) var(--e-8)', display: 'grid', gap: 'var(--e-5)', maxWidth: '52rem' }}>
       <Link href="/" style={{ justifySelf: 'start' }}>
-        <img src="/rr.svg" alt="RR." width={294} height={195} style={{ height: 24, width: 'auto' }} />
+        <img src="/rr.svg" alt="RR." width={259} height={142} style={{ height: 24, width: 'auto' }} />
       </Link>
       <article className="cartao pilha pilha-4">
         <span className="maiusc" style={{ color: 'var(--acao)' }}>Versão {LEGAL_VERSION}</span>

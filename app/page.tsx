@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Narrativa } from '@/components/narrativa';
 import { Configurador } from '@/components/configurador';
+import { MedidaDoTexto } from '@/components/medida-do-texto';
 import e from './page.module.css';
 
 export const metadata: Metadata = {
@@ -38,7 +39,7 @@ export default function Pagina() {
       <header className={e.nav}>
         <nav className={`${e.navInterior} envolve`} aria-label="Principal">
           <Link href="/" className={e.logo}>
-            <img src="/rr-branco.svg" alt="RR. — Rúben Meirinho Rodrigues" width={294} height={195} />
+            <img src="/rr-branco.svg" alt="RR. — Rúben Meirinho Rodrigues" width={259} height={142} />
             <span className={e.logoNome}>
               Contabilidade · Fiscalidade
               <small>Consultoria &amp; Estratégia</small>
@@ -61,7 +62,7 @@ export default function Pagina() {
           <div className={e.heroiGrelha} aria-hidden="true" />
 
           <div className={`${e.heroiInterior} envolve`}>
-            <div className={e.heroiTexto2}>
+            <MedidaDoTexto className={e.heroiTexto2}>
               <p className={e.selo}>
                 <span aria-hidden="true" />
                 Campanha IRS 2026 · entrega em 2027
@@ -69,7 +70,7 @@ export default function Pagina() {
               <h1 className={e.heroiTitulo}>
                 O seu IRS, <em>feito como deve ser.</em>
               </h1>
-              <p className={e.heroiTexto}>
+              <p className={e.heroiTexto} data-medir>
                 Reúna os documentos ao seu ritmo. Eu trato do resto — reviso, pergunto o que falta e submeto.
                 Vê o estado do processo a qualquer hora, no telemóvel ou no computador.
               </p>
@@ -90,7 +91,7 @@ export default function Pagina() {
                   Submeter o meu IRS
                 </Link>
               </div>
-            </div>
+            </MedidaDoTexto>
 
             <div className={e.atomo} aria-hidden="true">
               <div className={e.orbita} />
@@ -160,7 +161,7 @@ export default function Pagina() {
         <div className={`${e.rodapeInterior} envolve`}>
           <div className={e.rodapeIdentidade}>
             <Link href="/" className={e.rodapeMarca}>
-              <img src="/rr-branco.svg" alt="RR. — Início" width={294} height={195} />
+              <img src="/rr-branco.svg" alt="RR. — Início" width={259} height={142} />
             </Link>
             <p>
               <span className={e.rodapeNome}>Rúben Miguel da Silva Duarte Meirinho Rodrigues</span>

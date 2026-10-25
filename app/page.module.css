@@ -83,7 +83,8 @@
   display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
   gap: var(--e-4) clamp(1rem, 2vw, 1.75rem);
   padding-block-start: var(--e-2);
-  max-inline-size: var(--medida);
+  /* A medida real vem do JavaScript; a do parágrafo é o que se vê antes. */
+  max-inline-size: var(--medida-real, var(--medida));
 }
 .valores { display: flex; align-items: center; gap: clamp(1rem, 2vw, 1.75rem); }
 .valorGrupo { display: grid; gap: .125rem; }
@@ -167,11 +168,17 @@
   align-content: start;
   /* A folga é declarada uma vez e reaproveitada pelo telemóvel, para os dois
      não saírem do sítio quando uma delas mudar. */
-  --folga: 8.5rem;
-  padding-block: 6rem 2.5rem;
+  --folga: 7.25rem;
+  padding-block: 5.25rem 2rem;
 }
 
-.palcoTexto { display: grid; align-content: start; gap: clamp(1.5rem, 3vh, 2.75rem); min-inline-size: 0; }
+.palcoTexto { display: grid; align-content: start; gap: clamp(1rem, 2.6vh, 2.5rem); min-inline-size: 0; }
+
+/* Dentro do palco a medida é a altura disponível, não a largura: é ela que
+   decide quanto texto cabe. Em ecrãs altos fica grande, em ecrãs baixos
+   encolhe sozinho — sem degraus e sem nunca passar do fundo. */
+.palcoTexto .seccaoTitulo { font-size: clamp(2rem, .6rem + 4.6vh, 3.5rem); }
+.palcoTexto .seccaoTexto { font-size: clamp(.9375rem, .55rem + .85vh, 1.125rem); }
 
 /* As etapas ocupam todas a mesma célula: trocam, não empilham. */
 .passosPilha { display: grid; }
@@ -184,14 +191,15 @@
 
 .passoNumero {
   display: inline-flex; align-items: center; justify-content: center;
-  inline-size: 2.5rem; block-size: 2.5rem; border-radius: var(--r-pill);
+  inline-size: clamp(2rem, 1rem + 1.6vh, 2.75rem); block-size: clamp(2rem, 1rem + 1.6vh, 2.75rem);
+  border-radius: var(--r-pill);
   background: var(--acao); color: #fff;
   font-weight: 750; font-size: var(--t-sm); font-variant-numeric: tabular-nums;
 }
-.passoTitulo { font-size: clamp(1.5rem, 1rem + 1.4vw, 2.125rem); font-weight: 760; letter-spacing: -.035em; line-height: 1.1; }
-.passoTexto { font-size: clamp(1rem, .95rem + .25vw, 1.125rem); color: var(--texto-suave); line-height: 1.6; max-inline-size: 42ch; }
+.passoTitulo { font-size: clamp(1.375rem, .4rem + 2.8vh, 2.5rem); font-weight: 760; letter-spacing: -.035em; line-height: 1.1; }
+.passoTexto { font-size: clamp(.9375rem, .6rem + .95vh, 1.1875rem); color: var(--texto-suave); line-height: 1.55; max-inline-size: 44ch; }
 .passoLista { display: grid; gap: var(--e-2); }
-.passoLista li { display: flex; gap: var(--e-3); align-items: flex-start; color: var(--texto-suave); font-size: var(--t-base); }
+.passoLista li { display: flex; gap: var(--e-3); align-items: flex-start; color: var(--texto-suave); font-size: clamp(.875rem, .6rem + .75vh, 1.0625rem); }
 .passoLista li::before {
   content: ''; flex: none; inline-size: .4rem; block-size: .4rem; border-radius: 50%;
   background: var(--acao); margin-block-start: .5rem;
@@ -244,31 +252,7 @@
   background: var(--acao); color: #fff; font-size: .8125rem; font-weight: 650;
 }
 
-/* Ecrãs baixos: tudo encolhe em conjunto, para a etapa inteira — título,
-   texto e pontos — continuar a caber sem cortar nem precisar de scroll. */
-@media (max-height: 860px) {
-  .palcoFixo { padding-block: 5rem 1.5rem; --folga: 6.5rem; }
-  .palcoTexto { gap: clamp(.75rem, 1.8vh, 1.5rem); }
-  .seccaoTitulo { font-size: clamp(1.75rem, 1.1rem + 2vw, 2.5rem); }
-  .seccaoTexto { font-size: 1rem; }
-  .passo { gap: var(--e-3); }
-  .passoNumero { inline-size: 2.125rem; block-size: 2.125rem; }
-  .passoTitulo { font-size: clamp(1.25rem, .85rem + 1.1vw, 1.75rem); }
-  .passoTexto { font-size: .9375rem; }
-  .passoLista li { font-size: .9375rem; }
-}
-
-@media (max-height: 700px) {
-  .palcoFixo { padding-block: 4.5rem 1rem; --folga: 5.5rem; }
-  .seccaoTitulo { font-size: 1.625rem; }
-  .seccaoTexto { font-size: .9375rem; }
-  .passoTitulo { font-size: 1.25rem; }
-  .passoTexto { font-size: .875rem; line-height: 1.5; }
-  .passoLista li { font-size: .875rem; }
-  .passoLista { gap: .375rem; }
-}
-
-/* Abaixo disto não há altura que chegue: lê-se em sequência, como no telemóvel. */
+/* Abaixo disto não há altura que chegue para um palco: lê-se em sequência. */
 @media (max-height: 560px) and (min-width: 921px) {
   .palco { block-size: auto; }
   .palcoFixo { position: static; block-size: auto; padding-block: var(--e-6); }

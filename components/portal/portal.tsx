@@ -121,7 +121,7 @@ export function Portal(props: Props) {
         <header className={e.cabecalho}>
           <div className={`${e.cabecalhoInterior} envolve`}>
             <Link href={gabinete ? '/gabinete' : '/app'} className={e.marca} aria-label="Início">
-              <img src={gabinete ? '/rr-branco.svg' : '/rr.svg'} alt="RR." width={294} height={195} />
+              <img src={gabinete ? '/rr-branco.svg' : '/rr.svg'} alt="RR." width={259} height={142} />
             </Link>
             <div className={e.contexto}>
               <span className={e.contextoRotulo}>{props.rotulo}</span>
