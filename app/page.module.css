@@ -236,10 +236,38 @@
   background: var(--acao); color: #fff; font-size: .8125rem; font-weight: 650;
 }
 
-/* Ecrãs baixos: o telemóvel encolhe antes de o texto apertar. */
-@media (max-height: 760px) {
+/* Ecrãs baixos: tudo encolhe em conjunto, para a etapa inteira — título,
+   texto e pontos — continuar a caber sem cortar nem precisar de scroll. */
+@media (max-height: 860px) {
   .palcoFixo { padding-block: 5rem 1.5rem; --folga: 6.5rem; }
-  .passoTexto { font-size: 1rem; }
+  .palcoTexto { gap: clamp(.75rem, 1.8vh, 1.5rem); }
+  .seccaoTitulo { font-size: clamp(1.75rem, 1.1rem + 2vw, 2.5rem); }
+  .seccaoTexto { font-size: 1rem; }
+  .passo { gap: var(--e-3); }
+  .passoNumero { inline-size: 2.125rem; block-size: 2.125rem; }
+  .passoTitulo { font-size: clamp(1.25rem, .85rem + 1.1vw, 1.75rem); }
+  .passoTexto { font-size: .9375rem; }
+  .passoLista li { font-size: .9375rem; }
+}
+
+@media (max-height: 700px) {
+  .palcoFixo { padding-block: 4.5rem 1rem; --folga: 5.5rem; }
+  .seccaoTitulo { font-size: 1.625rem; }
+  .seccaoTexto { font-size: .9375rem; }
+  .passoTitulo { font-size: 1.25rem; }
+  .passoTexto { font-size: .875rem; line-height: 1.5; }
+  .passoLista li { font-size: .875rem; }
+  .passoLista { gap: .375rem; }
+}
+
+/* Abaixo disto não há altura que chegue: lê-se em sequência, como no telemóvel. */
+@media (max-height: 560px) and (min-width: 921px) {
+  .palco { block-size: auto; }
+  .palcoFixo { position: static; block-size: auto; padding-block: var(--e-6); }
+  .passosPilha { display: grid; gap: var(--e-6); }
+  .passo { grid-area: auto; opacity: 1; visibility: visible; transform: none; }
+  .visorColuna { display: none; }
+  .contagem { display: none; }
 }
 
 /* No telemóvel não há palco: os passos lêem-se em sequência. */
