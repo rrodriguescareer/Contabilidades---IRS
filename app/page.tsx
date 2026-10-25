@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Narrativa } from '@/components/narrativa';
+import { Configurador } from '@/components/configurador';
 import e from './page.module.css';
 
 export const metadata: Metadata = {
@@ -9,15 +10,6 @@ export const metadata: Metadata = {
     'Recolha, revisão e submissão do seu IRS de 2026 numa plataforma própria. Preço transparente desde 18,50 € com IVA incluído.',
   robots: { index: true, follow: true },
 };
-
-const RUBRICAS = [
-  { nome: 'Preparação do IRS', detalhe: 'Primeiro tipo de rendimento', valor: '18,50 €' },
-  { nome: 'Várias pessoas com trabalho ou pensões', detalhe: 'Independentemente do número de pessoas', valor: '+ 5,00 €' },
-  { nome: 'Acumulação de categorias A e B', detalhe: 'Trabalho dependente com recibos verdes', valor: '+ 15,00 €' },
-  { nome: 'Rendas de imóveis', detalhe: 'Até 2 imóveis · 3 a 5 · mais de 5', valor: '+ 5 / 10 / 20 €' },
-  { nome: 'Mais-valias de ações e títulos', detalhe: 'Categoria G, valor único', valor: '+ 10,00 €' },
-  { nome: 'Mais-valias de imóveis', detalhe: 'Por cada imóvel vendido', valor: '+ 10,00 €' },
-];
 
 const CONFIANCA = [
   {
@@ -39,13 +31,18 @@ const CONFIANCA = [
 ];
 
 export default function Pagina() {
+  const ano = new Date().getFullYear();
+
   return (
     <div className={e.pagina}>
       <header className={e.nav}>
         <nav className={`${e.navInterior} envolve`} aria-label="Principal">
           <Link href="/" className={e.logo}>
-            <img src="/rr-branco.svg" alt="RR." width={294} height={195} />
-            <span className={e.logoNome}>Contabilidade e consultoria</span>
+            <img src="/rr-branco.svg" alt="RR. — Rúben Meirinho Rodrigues" width={294} height={195} />
+            <span className={e.logoNome}>
+              Contabilidade · Fiscalidade
+              <small>Consultoria &amp; Estratégia</small>
+            </span>
           </Link>
           <div className={e.navAcoes}>
             <Link href="/entrar" className={e.navLink}>
@@ -62,39 +59,46 @@ export default function Pagina() {
         <section className={e.heroi}>
           <div className={e.heroiLuz} aria-hidden="true" />
           <div className={e.heroiGrelha} aria-hidden="true" />
+
           <div className={`${e.heroiInterior} envolve`}>
-            <p className={e.selo}>
-              <span aria-hidden="true" />
-              Campanha IRS 2026 · entrega em 2027
-            </p>
-            <h1 className={e.heroiTitulo}>
-              O seu IRS, <em>feito como deve ser.</em>
-            </h1>
-            <p className={e.heroiTexto}>
-              Reúna os documentos ao seu ritmo. Eu trato do resto — reviso, pergunto o que falta e submeto.
-              Vê o estado do processo a qualquer hora, no telemóvel ou no computador.
-            </p>
-            <div className={e.heroiAcoes}>
-              <Link href="/registar" className={`btn btn-lg ${e.btnClaro}`}>
-                Começar o meu IRS
-              </Link>
-              <Link href="/entrar" className={`btn btn-lg ${e.btnContorno}`}>
-                Já tenho conta
-              </Link>
+            <div className={e.heroiTexto2}>
+              <p className={e.selo}>
+                <span aria-hidden="true" />
+                Campanha IRS 2026 · entrega em 2027
+              </p>
+              <h1 className={e.heroiTitulo}>
+                O seu IRS, <em>feito como deve ser.</em>
+              </h1>
+              <p className={e.heroiTexto}>
+                Reúna os documentos ao seu ritmo. Eu trato do resto — reviso, pergunto o que falta e submeto.
+                Vê o estado do processo a qualquer hora, no telemóvel ou no computador.
+              </p>
+
+              <div className={e.linhaValor}>
+                <span className={e.valorGrupo}>
+                  <span className={`${e.valorNumero} numero`}>18,50 €</span>
+                  <span className={e.valorRotulo}>Desde, com IVA</span>
+                </span>
+                <span className={e.separadorValor} aria-hidden="true" />
+                <span className={e.valorGrupo}>
+                  <span className={e.valorNumero}>100% online</span>
+                  <span className={e.valorRotulo}>Sem deslocações</span>
+                </span>
+                <Link href="/registar" className={`btn btn-lg ${e.btnClaro}`}>
+                  Submeter o meu IRS
+                </Link>
+              </div>
             </div>
-            <div className={e.provas}>
-              <div className={e.prova}>
-                <span className={`${e.provaValor} numero`}>18,50 €</span>
-                <span className={e.provaRotulo}>Desde, com IVA</span>
+
+            <div className={e.atomo} aria-hidden="true">
+              <div className={e.orbita} />
+              <div className={`${e.orbita} ${e.dois}`} />
+              <div className={e.atomoNumero}>
+                IRS<span>.</span>
               </div>
-              <div className={e.prova}>
-                <span className={`${e.provaValor} numero`}>145854</span>
-                <span className={e.provaRotulo}>Cédula profissional</span>
-              </div>
-              <div className={e.prova}>
-                <span className={e.provaValor}>100% online</span>
-                <span className={e.provaRotulo}>Sem deslocações</span>
-              </div>
+              <div className={`${e.atomoEtiqueta} ${e.atomoA}`}>01 / ANALISAR</div>
+              <div className={`${e.atomoEtiqueta} ${e.atomoB}`}>02 / DECLARAR</div>
+              <div className={`${e.atomoEtiqueta} ${e.atomoC}`}>03 / ACOMPANHAR</div>
             </div>
           </div>
         </section>
@@ -116,40 +120,13 @@ export default function Pagina() {
           <div className="envolve">
             <div className={e.cabecalho}>
               <p className={e.olho}>Preços</p>
-              <h2 className={e.seccaoTitulo}>Sabe quanto paga antes de pagar.</h2>
+              <h2 className={e.seccaoTitulo}>Calcule o seu IRS antes de começar.</h2>
               <p className={e.seccaoTexto}>
-                O valor depende do que declarou. A plataforma mostra-lhe o cálculo rubrica a rubrica antes de
-                avançar para o pagamento.
+                Diga o que recebeu em 2026 e veja o preço montar-se, rubrica a rubrica. Sem registo e sem
+                compromisso.
               </p>
             </div>
-
-            <div className={e.precario}>
-              <div className={e.precoBase}>
-                <div className={e.precoValor}>
-                  <span className={`${e.precoNumero} numero`}>18,50</span>
-                  <span className={e.precoMoeda}>€</span>
-                </div>
-                <p className={e.precoNota}>
-                  Preparação do IRS com o primeiro tipo de rendimento. IVA incluído. Acrescem apenas as rubricas
-                  que se aplicarem ao seu caso.
-                </p>
-                <Link href="/registar" className={`btn ${e.btnClaro}`} style={{ position: 'relative', zIndex: 1, width: 'fit-content' }}>
-                  Calcular o meu IRS
-                </Link>
-              </div>
-
-              <div className={e.rubricas}>
-                {RUBRICAS.map((rubrica) => (
-                  <div className={e.rubrica} key={rubrica.nome}>
-                    <div className={e.rubricaTexto}>
-                      <strong>{rubrica.nome}</strong>
-                      <span>{rubrica.detalhe}</span>
-                    </div>
-                    <span className={`${e.rubricaValor} numero`}>{rubrica.valor}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <Configurador />
           </div>
         </section>
 
@@ -186,15 +163,33 @@ export default function Pagina() {
 
       <footer className={e.rodape}>
         <div className={`${e.rodapeInterior} envolve`}>
-          <div className={e.rodapeMarca}>
-            <img src="/rr-branco.svg" alt="" width={294} height={195} />
-            <strong>Rúben Miguel da Silva Duarte Meirinho Rodrigues</strong>
-            <span>Contabilista Certificado com a cédula n.º 145854</span>
-            <span>Domicílio profissional na Rua Augusto Simões 845, 4470-147 Maia</span>
+          <div className={e.rodapeIdentidade}>
+            <Link href="/" className={e.rodapeMarca}>
+              <img src="/rr-branco.svg" alt="RR. — Início" width={294} height={195} />
+            </Link>
+            <p>
+              <span className={e.rodapeNome}>Rúben Miguel da Silva Duarte Meirinho Rodrigues</span>
+              <span>
+                Contabilista Certificado com a cédula n.º 145854 · Domicílio Profissional na Rua Augusto Simões
+                845 4470-147 Maia
+              </span>
+            </p>
           </div>
-          <div className={e.rodapeLegal}>
-            <Link href="/termos">Termos e condições</Link>
-            <Link href="/privacidade">Privacidade</Link>
+
+          <div className={e.rodapeContactos}>
+            <a href="mailto:contabilidade.rubenrodrigues@gmail.com">Email ↗</a>
+            <a href="tel:+351936432519">+351 936 432 519</a>
+            <a href="https://www.linkedin.com/in/ruben-m-rodrigues/" rel="noopener noreferrer" target="_blank">
+              LinkedIn ↗
+            </a>
+          </div>
+
+          <div className={e.rodapeBase}>
+            <span>© {ano} Rúben Meirinho Rodrigues · Maia, Porto, Portugal</span>
+            <nav className={e.rodapeLegal} aria-label="Informação legal">
+              <Link href="/privacidade">Privacidade</Link>
+              <Link href="/termos">Termos e Condições</Link>
+            </nav>
           </div>
         </div>
       </footer>
