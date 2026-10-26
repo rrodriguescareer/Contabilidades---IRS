@@ -2,13 +2,14 @@ import { redirect } from 'next/navigation';
 import { identity } from '@/lib/auth';
 import { EcraAutenticacao } from '@/lib/auth-view';
 import FormularioPerfil, { type PerfilPessoal } from '@/components/profile-form';
+import { ResolverNif } from '@/components/resolver-nif';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Os seus dados' };
 
-export default async function Onboarding({ searchParams }: { searchParams: Promise<{ erro?: string }> }) {
+export default async function Onboarding({ searchParams }: { searchParams: Promise<{ erro?: string; conflito?: string }> }) {
   const { context } = await identity();
-  const { erro } = await searchParams;
+  const { erro, conflito } = await searchParams;
 
   if (context.is_staff) redirect('/gabinete');
   if (!context.legal_accepted) redirect('/aceitar-termos');
@@ -20,7 +21,11 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
       descricao="É o primeiro passo. A seguir monta o agregado, acrescenta rendimentos e carrega os documentos."
       erro={erro}
     >
-      <FormularioPerfil profile={context.profile as PerfilPessoal} />
+      {conflito === 'conta' || conflito === 'agregado' ? (
+        <ResolverNif tipo={conflito} />
+      ) : (
+        <FormularioPerfil profile={context.profile as PerfilPessoal} />
+      )}
     </EcraAutenticacao>
   );
 }

@@ -21,9 +21,9 @@ export async function saveProfile(form:FormData){
  const tipo=(conflito as {tipo?:string}|null)?.tipo;
  if(tipo==='conta'||tipo==='agregado'){
   await client.rpc('alertar_conflito_de_nif',{contribuinte:nif,tipo});
-  fail(tipo==='conta'
-   ?'Este NIF já está associado a outra conta. Avisei o contabilista, que entra em contacto para resolver — não precisa de fazer mais nada.'
-   :'Este NIF já consta no agregado de outra conta. Avisei o contabilista, que entra em contacto para o separar e migrar os seus dados.',path);
+  // O NIF não vai no endereço: é dado pessoal. Vai só o tipo de conflito, e
+  // o ecrã pede o número outra vez — o que serve também de reconfirmação.
+  redirect(`/onboarding?conflito=${tipo}`);
  }
 
  const {error}=await client.rpc('save_personal_profile',{person_name:name,birth,tax_id:nif,telephone:phone,address_street:street,address_postal:postal,address_locality:locality,two_factor:form.has('two_factor')});
