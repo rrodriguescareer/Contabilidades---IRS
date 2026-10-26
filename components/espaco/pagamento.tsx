@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState, useTransition } from 'react';
 import { beginCheckout } from '@/lib/checkout-actions';
 import { orcamento } from '@/lib/acoes-espaco';
+import { emitirFaturaDoMeuProcesso } from '@/lib/acoes-cegid';
 import type { Dados } from './espaco';
 import e from './espaco.module.css';
 
@@ -18,8 +19,8 @@ const euros = (c: number) =>
   (c / 100).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 
 export function Pagamento({
-  dados, conta, processo,
-}: { dados: Dados; conta: string; processo: string }) {
+  dados, conta, processo, teste,
+}: { dados: Dados; conta: string; processo: string; teste: boolean }) {
   const checkout = (dados.checkout as {
     estado: string; total: number; desconto: number | null;
     detalhe: Orcamento | null; pago_em: string | null;
@@ -65,6 +66,7 @@ export function Pagamento({
           A fatura-recibo é emitida e enviada por email nos próximos minutos.
         </p>
         <Descriminacao orcamento={(checkout?.detalhe as Orcamento) || null} />
+        {teste && <Ensaio processo={processo} />}
       </section>
     );
   }
@@ -97,7 +99,7 @@ export function Pagamento({
 
       <section className={e.cartao}>
         <h2>Pagar</h2>
-        <form action={beginCheckout} className="form-membro">
+        <form id="forma-pagamento" action={beginCheckout} className="form-membro">
           <input type="hidden" name="account" value={conta} />
           <input type="hidden" name="process" value={processo} />
           <input type="hidden" name="coupon" value={cupao} />
@@ -114,7 +116,56 @@ export function Pagamento({
           </button>
         </form>
       </section>
+
+      {teste && <Ensaio processo={processo} total={total} />}
     </>
+  );
+}
+
+/* Enquanto a plataforma não está aberta ao público, ela própria serve de
+   ensaio. O botão do pagamento submete o formulário real — testar um atalho
+   que não é o caminho verdadeiro não prova nada. */
+function Ensaio({ processo, total }: { processo: string; total?: number }) {
+  const [estado, setEstado] = useState<{ ok?: boolean; texto?: string }>({});
+  const [aCorrer, comecar] = useTransition();
+
+  return (
+    <section className={e.cartao} style={{ borderStyle: 'dashed' }}>
+      <h2>Ensaio das integrações</h2>
+      <p className="suave">
+        Só aparece enquanto a plataforma não está divulgada. A fatura fica em
+        preparação no Cegid; o pagamento abre o gateway a sério.
+      </p>
+
+      <div className="acoes-membro">
+        <button type="button" className="btn btn-secundario" disabled={aCorrer}
+                onClick={() =>
+                  comecar(async () => {
+                    const r = await emitirFaturaDoMeuProcesso(processo);
+                    setEstado({ ok: r.ok, texto: r.ok ? r.aviso : r.erro });
+                  })}>
+          {aCorrer ? 'A falar com o Cegid…' : 'Emitir fatura-recibo'}
+        </button>
+
+        {total != null && (
+          <button type="button" className="btn btn-secundario"
+                  onClick={() => {
+                    // Submete o formulário verdadeiro, com a confirmação dada.
+                    const forma = document.getElementById('forma-pagamento') as HTMLFormElement | null;
+                    const caixa = forma?.querySelector<HTMLInputElement>('input[name="confirmed"]');
+                    if (!forma || !caixa) return;
+                    caixa.checked = true;
+                    forma.requestSubmit();
+                  }}>
+            Abrir gateway de pagamento
+          </button>
+        )}
+      </div>
+
+      {estado.texto && (
+        <p className={estado.ok ? 'aviso-positivo' : 'aviso-critico'}>{estado.texto}</p>
+      )}
+    </section>
   );
 }
 

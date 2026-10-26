@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { session } from '@/lib/auth';
 import { carregarEspaco, vistaValida } from '@/lib/espaco';
 import { Espaco } from '@/components/espaco/espaco';
+import { modoDeTeste } from '@/lib/acoes-cegid';
 
 export const metadata = { title: 'O meu IRS' };
 export const dynamic = 'force-dynamic';
@@ -42,6 +43,7 @@ export default async function AreaCliente({ searchParams }: Props) {
       nome={context.profile.full_name || context.email}
       vistaInicial={vista}
       dadosIniciais={dados ?? { vista }}
+      teste={await modoDeTeste()}
     />
   );
 }

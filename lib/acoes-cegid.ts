@@ -152,3 +152,53 @@ export async function criarFichaAposOnboarding(): Promise<{ aviso?: string }> {
   }
   return {};
 }
+
+/* --------------------------------------------------------- modo de teste */
+/* Enquanto a plataforma não está divulgada, ela própria serve de banco de
+   ensaio. Estes atalhos só existem com MODO_TESTE ligado: quando abrires ao
+   público, apagas a variável e eles desaparecem — sem mexer em código. */
+export async function modoDeTeste() {
+  return process.env.MODO_TESTE === 'true';
+}
+
+/** Emitir a fatura a partir do espaço do cliente, para testar a API. */
+export async function emitirFaturaDoMeuProcesso(processo: string): Promise<Resposta> {
+  if (process.env.MODO_TESTE !== 'true') {
+    return { ok: false, erro: 'A emissão manual está desligada.' };
+  }
+  const { context } = await session();
+  const meu = context.cases?.some((c: { id: string }) => c.id === processo);
+  if (!meu) return { ok: false, erro: 'Sem acesso a este processo.' };
+
+  const perfil = context.profile;
+  if (!perfil?.nif) return { ok: false, erro: 'Preencha o NIF em "A minha conta" primeiro.' };
+
+  const admin = adminClient();
+  const { data: pago } = await admin
+    .from('irs_checkouts')
+    .select('amount_cents')
+    .eq('case_id', processo)
+    .eq('state', 'paid')
+    .order('paid_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  const total = pago?.amount_cents ?? 100;
+  const { emitirFaturaRecibo } = await import('./cegid');
+  const r = await emitirFaturaRecibo({
+    nif: perfil.nif,
+    nome: perfil.full_name || context.email,
+    descricao: 'IRS 2026',
+    totalCents: total,
+  });
+  if (!r.ok) {
+    return {
+      ok: false,
+      erro: r.nifInvalido ? `O Cegid recusou o NIF ${perfil.nif}.` : r.erro,
+    };
+  }
+  return {
+    ok: true,
+    aviso: `Fatura-recibo de ${(total / 100).toFixed(2)} € criada no Cegid, em preparação.`,
+  };
+}

@@ -24,6 +24,7 @@ type Props = {
   estado: string;
   vistaInicial: string;
   dadosIniciais: Dados;
+  teste: boolean;
 };
 
 export function Espaco(props: Props) {
@@ -34,7 +35,7 @@ export function Espaco(props: Props) {
   );
 }
 
-function Painel({ conta, processo, nome, estado, vistaInicial, dadosIniciais }: Props) {
+function Painel({ conta, processo, nome, estado, vistaInicial, dadosIniciais, teste }: Props) {
   const { t, lingua, trocar } = usarIdioma();
   const [vista, setVista] = useState<Vista>(
     (SEPARADORES as readonly string[]).includes(vistaInicial) ? (vistaInicial as Vista) : 'agregado',
@@ -143,7 +144,7 @@ function Painel({ conta, processo, nome, estado, vistaInicial, dadosIniciais }: 
           )}
           {vista === 'progresso' && <Acompanhamento dados={dados} />}
           {vista === 'pagamento' && (
-            <Pagamento dados={dados} conta={conta} processo={processo} />
+            <Pagamento dados={dados} conta={conta} processo={processo} teste={teste} />
           )}
           {vista === 'mensagens' && (
             <Mensagens dados={dados} conta={conta} processo={processo} aoMudar={recarregar} />
