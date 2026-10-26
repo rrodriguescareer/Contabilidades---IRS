@@ -391,3 +391,67 @@
   }
   .btn-texto:hover { color: #b4332f; }
 }
+
+/* O percurso do processo, a conversa e a tabela de preço. */
+@layer components {
+  .percurso { list-style: none; margin: 0; padding: 0; display: grid; gap: 0; }
+  .percurso li {
+    display: grid;
+    grid-template-columns: 1.6rem 1fr;
+    gap: .8rem;
+    padding-bottom: var(--e-4);
+    position: relative;
+  }
+  /* A linha que liga os passos não desce do último. */
+  .percurso li:not(:last-child)::before {
+    content: '';
+    position: absolute;
+    left: .72rem;
+    top: 1.3rem;
+    bottom: 0;
+    width: 2px;
+    background: #dbe6f6;
+  }
+  .marca-passo {
+    inline-size: 1.05rem;
+    block-size: 1.05rem;
+    border-radius: 999px;
+    border: 2px solid #c6d6ee;
+    background: #fff;
+    margin-top: .22rem;
+    z-index: 1;
+  }
+  .percurso li[data-estado='feito'] .marca-passo { background: #2867f8; border-color: #2867f8; }
+  .percurso li[data-estado='atual'] .marca-passo {
+    border-color: #2867f8;
+    box-shadow: 0 0 0 4px #2867f822;
+  }
+  .percurso li[data-estado='por-vir'] strong { color: #8ea6c8; }
+  .percurso strong { font-size: .94rem; }
+  .percurso p { margin: .1rem 0 0; font-size: .82rem; }
+
+  .conversa { display: grid; gap: .6rem; max-block-size: 26rem; overflow-y: auto; padding: .2rem; }
+  .balao {
+    justify-self: start;
+    max-inline-size: 85%;
+    background: #eef3fb;
+    border-radius: .9rem .9rem .9rem .2rem;
+    padding: .7rem .9rem;
+  }
+  .balao[data-meu='true'] {
+    justify-self: end;
+    background: #0a2344;
+    color: #fff;
+    border-radius: .9rem .9rem .2rem .9rem;
+  }
+  .balao[data-meu='true'] .suave { color: #9db2d1; }
+  .balao p { margin: 0 0 .25rem; font-size: .9rem; white-space: pre-wrap; }
+  .balao span { font-size: .72rem; }
+
+  .tabela-preco { inline-size: 100%; border-collapse: collapse; font-size: .9rem; }
+  .tabela-preco td { padding: .5rem 0; border-top: 1px solid #eef3fb; }
+  .tabela-preco td:last-child { text-align: right; font-variant-numeric: tabular-nums; }
+  .tabela-preco tr:first-child td { border-top: 0; }
+  .tabela-preco .desconto td { color: #1f7a4d; }
+  .tabela-preco .total td { font-weight: 800; border-top: 2px solid #0a2344; }
+}

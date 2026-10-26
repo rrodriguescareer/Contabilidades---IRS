@@ -4,6 +4,7 @@ import {
   guardarDeducoes, guardarImovel, guardarNota, guardarRendimento, removerRendimento,
 } from '@/lib/acoes-espaco';
 import { AMBITOS, DEDUCOES, SEPARADORES, type Separador, temIdadeParaIrsJovem } from './separadores';
+import { EnvioDocumento, type Documento } from './documentos';
 import type { Dados } from './espaco';
 import e from './espaco.module.css';
 
@@ -30,9 +31,9 @@ const pertence = (r: Rendimento, s: Separador) => {
 };
 
 export function Rendimentos({
-  dados, processo, estado, aoMudar,
+  dados, conta, processo, estado, aoMudar,
 }: {
-  dados: Dados; processo: string; estado: string; aoMudar: () => void;
+  dados: Dados; conta: string; processo: string; estado: string; aoMudar: () => void;
 }) {
   const [aba, setAba] = useState<string>(SEPARADORES[0].id);
   const membros = (dados.membros as Membro[]) || [];
@@ -65,11 +66,12 @@ export function Rendimentos({
       )}
 
       {separador ? (
-        <Aba separador={separador} processo={processo} membros={membros} imoveis={imoveis}
+        <Aba separador={separador} conta={conta} processo={processo} membros={membros} imoveis={imoveis}
+             documentos={(dados.documentos as Documento[]) || []}
              rendimentos={rendimentos.filter((r) => pertence(r, separador))}
              nota={notas[separador.categoria] || ''} aberto={aberto} aoMudar={aoMudar} />
       ) : (
-        <Deducoes dados={dados} processo={processo} membros={membros}
+        <Deducoes dados={dados} conta={conta} processo={processo} membros={membros}
                   nota={notas.deduction || ''} aberto={aberto} aoMudar={aoMudar} />
       )}
     </>
@@ -77,10 +79,11 @@ export function Rendimentos({
 }
 
 function Aba({
-  separador, processo, membros, imoveis, rendimentos, nota, aberto, aoMudar,
+  separador, conta, processo, membros, imoveis, documentos, rendimentos, nota, aberto, aoMudar,
 }: {
-  separador: Separador; processo: string; membros: Membro[]; imoveis: Imovel[];
-  rendimentos: Rendimento[]; nota: string; aberto: boolean; aoMudar: () => void;
+  separador: Separador; conta: string; processo: string; membros: Membro[]; imoveis: Imovel[];
+  documentos: Documento[]; rendimentos: Rendimento[]; nota: string;
+  aberto: boolean; aoMudar: () => void;
 }) {
   const [novo, setNovo] = useState(false);
   const meus = separador.porImovel
@@ -146,11 +149,25 @@ function Aba({
       <section className={e.cartao}>
         <h2>Documentos</h2>
         <p className="suave">{separador.documentos.nota}</p>
-        <p className="suave">
-          Tipos aceites: {separador.documentos.tipos.join(' · ')}
-          {separador.documentos.obrigatorio ? ' (obrigatórios)' : ''}
-        </p>
-        <div className={e.vazio}>O envio de documentos entra no passo seguinte.</div>
+        {(() => {
+          const meus = documentos.filter((d) => d.categoria === separador.categoria);
+          return meus.length === 0 ? (
+            <div className={e.vazio}>Ainda não enviou documentos neste separador.</div>
+          ) : (
+            meus.map((d) => (
+              <div key={d.id} className="linha-membro">
+                <div>
+                  <strong>{d.tipo}</strong>
+                  <p className="suave">{d.descricao || d.nome}</p>
+                </div>
+              </div>
+            ))
+          );
+        })()}
+        <EnvioDocumento conta={conta} processo={processo} categoria={separador.categoria}
+                        tipos={separador.documentos.tipos}
+                        imoveis={separador.porImovel ? meus : undefined}
+                        aberto={aberto} aoEnviar={aoMudar} />
       </section>
 
       <Nota processo={processo} aba={separador.categoria} inicial={nota} aberto={aberto} />
@@ -346,9 +363,9 @@ function Nota({ processo, aba, inicial, aberto }:
 }
 
 function Deducoes({
-  dados, processo, membros, nota, aberto, aoMudar,
+  dados, conta, processo, membros, nota, aberto, aoMudar,
 }: {
-  dados: Dados; processo: string; membros: Membro[]; nota: string;
+  dados: Dados; conta: string; processo: string; membros: Membro[]; nota: string;
   aberto: boolean; aoMudar: () => void;
 }) {
   const atual = (dados.deducoes as Record<string, unknown>) || {};
@@ -429,7 +446,8 @@ function Deducoes({
       <section className={e.cartao}>
         <h2>Documentos</h2>
         <p className="suave">{DEDUCOES.documentos.nota}</p>
-        <div className={e.vazio}>O envio de documentos entra no passo seguinte.</div>
+        <EnvioDocumento conta={conta} processo={processo} categoria="deduction"
+                        tipos={DEDUCOES.documentos.tipos} aberto={aberto} aoEnviar={aoMudar} />
       </section>
 
       <Nota processo={processo} aba="deduction" inicial={nota} aberto={aberto} />

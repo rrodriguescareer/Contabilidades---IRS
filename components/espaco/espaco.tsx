@@ -6,6 +6,10 @@ import { signOut } from '@/lib/auth-actions';
 import { Idioma, usarIdioma } from './idioma';
 import { Agregado } from './agregado';
 import { Rendimentos } from './rendimentos';
+import { Documentos } from './documentos';
+import { Acompanhamento } from './acompanhamento';
+import { Pagamento } from './pagamento';
+import { Mensagens } from './mensagens';
 import e from './espaco.module.css';
 
 export type Dados = Record<string, unknown> & { vista: string };
@@ -30,7 +34,7 @@ export function Espaco(props: Props) {
   );
 }
 
-function Painel({ processo, nome, estado, vistaInicial, dadosIniciais }: Props) {
+function Painel({ conta, processo, nome, estado, vistaInicial, dadosIniciais }: Props) {
   const { t, lingua, trocar } = usarIdioma();
   const [vista, setVista] = useState<Vista>(
     (SEPARADORES as readonly string[]).includes(vistaInicial) ? (vistaInicial as Vista) : 'agregado',
@@ -130,12 +134,19 @@ function Painel({ processo, nome, estado, vistaInicial, dadosIniciais }: Props) 
             <Agregado dados={dados} processo={processo} aoMudar={recarregar} />
           )}
           {vista === 'rendimentos' && (
-            <Rendimentos dados={dados} processo={processo} estado={estado} aoMudar={recarregar} />
+            <Rendimentos dados={dados} conta={conta} processo={processo} estado={estado}
+                         aoMudar={recarregar} />
           )}
-          {vista !== 'agregado' && vista !== 'rendimentos' && (
-            <div className={e.vazio}>
-              Este separador entra a seguir. O desenho e os dados já estão prontos por baixo.
-            </div>
+          {vista === 'documentos' && (
+            <Documentos dados={dados} conta={conta} processo={processo}
+                        aberto={estado === 'collecting'} aoMudar={recarregar} />
+          )}
+          {vista === 'progresso' && <Acompanhamento dados={dados} />}
+          {vista === 'pagamento' && (
+            <Pagamento dados={dados} conta={conta} processo={processo} />
+          )}
+          {vista === 'mensagens' && (
+            <Mensagens dados={dados} conta={conta} processo={processo} aoMudar={recarregar} />
           )}
         </main>
       </div>

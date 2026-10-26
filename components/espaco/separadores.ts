@@ -173,3 +173,15 @@ export function temIdadeParaIrsJovem(nascimento: string | null | undefined, ano 
   const anos = ano - new Date(nascimento).getFullYear();
   return anos >= 0 && anos <= 35;
 }
+
+/** Os tipos de documento aceites num separador. Vazio = não restringe. */
+export function tiposDocumentaisDe(categoria: string | null | undefined): string[] {
+  if (!categoria) return [];
+  if (categoria === DEDUCOES.id) return DEDUCOES.documentos.tipos;
+  const tipos = SEPARADORES.filter((s) => s.categoria === categoria).flatMap(
+    (s) => s.documentos.tipos,
+  );
+  // As ações e os capitais partilham categoria: aceita-se o que qualquer um
+  // dos dois separadores permite, mais o saco de "outra documentação".
+  return [...new Set([...tipos, 'Outra Documentação'])];
+}

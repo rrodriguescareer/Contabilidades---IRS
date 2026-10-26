@@ -210,3 +210,17 @@ export async function guardarDeducoes(processo: string, form: FormData): Promise
   revalidatePath('/app');
   return { ok: true };
 }
+
+/** O preço, descriminado, para o separador do pagamento. */
+export async function orcamento(processo: string, cupao = '') {
+  const { erro, conta } = await doProcesso(processo);
+  if (erro || !conta) return { dados: null, erro: erro || 'Sem acesso.' };
+  const cliente = await supabase();
+  const { data, error } = await cliente.rpc('quote_irs_checkout', {
+    account: conta,
+    process: processo,
+    coupon: cupao.trim().slice(0, 40),
+  });
+  if (error) return { dados: null, erro: error.message };
+  return { dados: data as Record<string, unknown>, erro: null };
+}

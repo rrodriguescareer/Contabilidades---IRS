@@ -4,6 +4,7 @@ import { createHash } from 'node:crypto';
 import { identity } from './auth';
 import { personError } from './validation';
 import { uuid, categories, states, relations, documentKinds } from './data';
+import { tiposDocumentaisDe } from '@/components/espaco/separadores';
 import { comprimirDocumento, nomeGuardado } from './comprimir';
 
 /* As ações devolvem um resultado em vez de redirecionarem.
@@ -174,6 +175,11 @@ export async function enviarDocumento(_anterior: Resultado | null, form: FormDat
   const { conta, processo } = alvo(form);
   const rendimento = texto(form, 'rendimento');
   const tipo = texto(form, 'tipo', 150);
+  // Novos no espaço do cliente: a que separador pertence, a que imóvel diz
+  // respeito, e a descrição que o cliente escreve.
+  const categoriaPedida = texto(form, 'categoria', 30);
+  const imovel = texto(form, 'imovel');
+  const descricao = texto(form, 'descricao', 200);
   const ficheiro = form.get('ficheiro');
 
   if (!(ficheiro instanceof File) || ficheiro.size < 1 || ficheiro.size > 10485760) {
@@ -193,7 +199,10 @@ export async function enviarDocumento(_anterior: Resultado | null, form: FormDat
     if (!data) return falha('Rendimento não autorizado.');
     categoria = data.category;
   }
-  if (!tipo || (categoria && !documentKinds[categoria]?.includes(tipo))) {
+  // Os tipos aceites vêm do separador onde o documento é enviado. Os antigos
+  // continuam a valer para o que o gabinete já tinha.
+  const aceites = tiposDocumentaisDe(categoriaPedida || categoria);
+  if (!tipo || (aceites.length > 0 && !aceites.includes(tipo))) {
     return falha('Escolha um campo documental válido.');
   }
 
@@ -230,7 +239,15 @@ export async function enviarDocumento(_anterior: Resultado | null, form: FormDat
     }
   }
 
-  const { error: terminado } = await client.from('documents').update({ state: 'uploaded' }).eq('id', id);
+  const { error: terminado } = await client
+    .from('documents')
+    .update({
+      state: 'uploaded',
+      category: categoriaPedida || null,
+      property_id: imovel || null,
+      description: descricao || null,
+    })
+    .eq('id', id);
   if (terminado) return falha('O ficheiro foi recebido mas falta confirmar o estado. Contacte o contabilista.');
   if (reused) return feito('Documento já existia e foi reaproveitado.');
   if (guardar.convertido) {
