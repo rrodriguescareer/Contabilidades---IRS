@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { DM_Sans, Manrope } from 'next/font/google';
 import { RegistarServico } from '@/components/registar-servico';
+import { FaixaDeAvisos } from '@/components/espaco/avisos';
 import './globals.css';
 
 // As mesmas do website: DM Sans no corpo, Manrope nos títulos.
@@ -69,6 +70,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a className="skip" href="#principal">
           Saltar para o conteúdo
         </a>
+        {/* Acima de tudo: um aviso que é preciso procurar não serve. */}
+        <FaixaDeAvisos />
         {children}
         <RegistarServico />
       </body>

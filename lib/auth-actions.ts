@@ -34,6 +34,18 @@ export async function signUp(form: FormData) {
   if(!validEmail(email)||password.length<12||password.length>128)error('Indique um email válido e uma palavra-passe entre 12 e 128 caracteres.','/registar');
   if(await senhaComprometida(password))error(AVISO_SENHA_COMPROMETIDA,'/registar');
   const origin=siteUrl();if(!origin)error('O registo está temporariamente indisponível. Contacte o profissional.','/registar');
+
+  /* O Supabase não diz se o email já existe — protege contra enumeração de
+     contas. O efeito é que o registo repetido parece correr bem e o email de
+     confirmação nunca chega, e a pessoa fica à espera. Preferimos dizê-lo:
+     numa plataforma onde o utilizador é cliente identificado de um gabinete,
+     o silêncio custa mais do que o que protege. */
+  const {adminClient}=await import('./admin-client');
+  try{
+   const {data:existente}=await adminClient().rpc('email_ja_registado',{endereco:email});
+   if(existente===true)error('Já existe uma conta com este email. Entre, ou recupere a palavra-passe.','/registar');
+  }catch{/* sem chave de serviço, segue — mais vale registar do que travar */}
+
   const client=await supabase();
   const {error:failure}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${origin}/auth/callback?next=/app`,data:{terms_accepted:true,terms_version:LEGAL_VERSION,privacy_version:LEGAL_VERSION}}});
   if (failure) error('Não foi possível concluir o registo. Verifique os dados ou tente recuperar o acesso.','/registar');

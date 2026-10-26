@@ -1,0 +1,16 @@
+/* Fica acima de tudo, inclusive do cabeçalho: um aviso que é preciso
+   procurar não serve para nada. */
+.faixa { display: grid; }
+.aviso {
+  margin: 0;
+  padding: .7rem clamp(1rem, 3vw, 2rem);
+  font-size: .86rem;
+  font-weight: 600;
+  line-height: 1.45;
+  text-align: center;
+  background: #eaf1fc;
+  color: #1b3f7a;
+  border-bottom: 1px solid #cfdff5;
+}
+.aviso[data-tom='atencao'] { background: #fff6e6; color: #7a4b12; border-bottom-color: #f0dcb8; }
+.aviso[data-tom='critico'] { background: #fdecea; color: #8c2823; border-bottom-color: #f3cdc9; }
