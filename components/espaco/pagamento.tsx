@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState, useTransition } from 'react';
-import { beginCheckout } from '@/lib/checkout-actions';
+import { pagarComStripe } from '@/lib/stripe-checkout';
 import { orcamento } from '@/lib/acoes-espaco';
 import { emitirFaturaDoMeuProcesso } from '@/lib/acoes-cegid';
 import type { Dados } from './espaco';
@@ -99,7 +99,7 @@ export function Pagamento({
 
       <section className={e.cartao}>
         <h2>Pagar</h2>
-        <form id="forma-pagamento" action={beginCheckout} className="form-membro">
+        <form id="forma-pagamento" action={pagarComStripe} className="form-membro">
           <input type="hidden" name="account" value={conta} />
           <input type="hidden" name="process" value={processo} />
           <input type="hidden" name="coupon" value={cupao} />
