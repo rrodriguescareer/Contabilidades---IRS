@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { useCallback, useRef, useState, useTransition } from 'react';
 import { pedirVistaGabinete } from '@/lib/acoes-espaco';
+import { Processo } from './processo';
 import { signOut } from '@/lib/auth-actions';
 import { Integracoes } from './integracoes';
 import { ALERTAS, ESTADOS, MEUS, PAGAMENTOS } from './estados';
@@ -23,16 +24,40 @@ const data = (iso: string | null) =>
 const euros = (c: number | null) =>
   c == null ? '—' : (c / 100).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 
-export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado, cegidOrigem }:
+export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado, cegidOrigem, processoInicial }:
   { vistaInicial: string; dadosIniciais: Dados; cegidConfigurado: boolean;
-    cegidOrigem: 'ambiente' | 'gabinete' | 'nenhuma' }) {
+    cegidOrigem: 'ambiente' | 'gabinete' | 'nenhuma';
+    processoInicial?: { id: string; dados: Dados } | null }) {
   const [vista, setVista] = useState(vistaInicial);
   const [dados, setDados] = useState(dadosIniciais);
+  /* Abrir um processo não muda de página: troca o conteúdo da consola, como
+     o menu faz. Assim não se perde o sítio onde se estava na fila. */
+  const [aberto, setAberto] = useState<{ id: string; dados: Dados } | null>(processoInicial ?? null);
   const [erro, setErro] = useState<string | null>(null);
   const [aCarregar, comecar] = useTransition();
   const cache = useRef(new Map<string, Dados>([[dadosIniciais.vista, dadosIniciais]]));
 
+  const abrir = useCallback((processo: string) => {
+    setErro(null);
+    comecar(async () => {
+      const { dados: novos, erro: falha } = await pedirVistaGabinete('processo', processo);
+      if (falha || !novos) { setErro(falha || 'Não foi possível abrir o processo.'); return; }
+      setAberto({ id: processo, dados: novos as Dados });
+      window.history.pushState(null, '', `/gabinete?processo=${processo}`);
+    });
+  }, []);
+
+  const recarregarAberto = useCallback(() => {
+    if (aberto) abrir(aberto.id);
+  }, [aberto, abrir]);
+
+  const fechar = useCallback(() => {
+    setAberto(null);
+    window.history.pushState(null, '', '/gabinete');
+  }, []);
+
   const ir = useCallback((destino: string) => {
+    setAberto(null);
     setVista(destino);
     setErro(null);
     // As integrações não vêm da base: são um ecrã de configuração.
@@ -55,7 +80,9 @@ export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado, cegidOr
         <div className={e.barra}>
           <span className={e.etiqueta}>Gabinete</span>
           <span className={e.contexto}>
-            <b>IRS 2026</b> · todos os processos
+            {aberto
+              ? <><b>{String((aberto.dados.cabecalho as Record<string, string>)?.cliente || 'Processo')}</b> · IRS 2026</>
+              : <><b>IRS 2026</b> · todos os processos</>}
           </span>
           <div className={e.fim}>
             <form action={signOut}>
@@ -81,17 +108,24 @@ export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado, cegidOr
         {erro && <p className="aviso-critico">{erro}</p>}
         {aCarregar && <p className="suave">A carregar…</p>}
 
-        {vista === 'fila' && <Fila dados={dados} />}
+        {aberto ? (
+          <Processo dados={aberto.dados} processo={aberto.id}
+                    aoFechar={fechar} aoMudar={recarregarAberto} />
+        ) : (
+        <>
+        {vista === 'fila' && <Fila dados={dados} abrir={abrir} />}
         {vista === 'mensagens' && <Conversas dados={dados} />}
         {vista === 'pagamentos' && <Pagamentos dados={dados} />}
         {vista === 'alertas' && <Alertas dados={dados} />}
         {vista === 'integracoes' && <Integracoes configurado={cegidConfigurado} origem={cegidOrigem} />}
+        </>
+        )}
       </main>
     </div>
   );
 }
 
-function Fila({ dados }: { dados: Dados }) {
+function Fila({ dados, abrir }: { dados: Dados; abrir: (p: string) => void }) {
   const processos = (dados.processos as Record<string, never>[]) || [];
   const totais = (dados.totais as Record<string, number>) || {};
   return (
@@ -116,7 +150,11 @@ function Fila({ dados }: { dados: Dados }) {
           <tbody>
             {processos.map((p: Record<string, never>) => (
               <tr key={String(p.id)}>
-                <td><Link href={`/gabinete/${p.id}`}>{String(p.cliente)}</Link></td>
+                <td>
+                  <button type="button" className={e.ligacao} onClick={() => abrir(String(p.id))}>
+                    {String(p.cliente)}
+                  </button>
+                </td>
                 <td>
                   <span className={e.selo} data-urgente={MEUS.includes(String(p.estado))}>
                     {ESTADOS[String(p.estado)] || String(p.estado)}

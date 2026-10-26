@@ -251,12 +251,16 @@ export type FichaCliente = {
   telefone?: string | null;
   /** Continente, Açores ou Madeira mudam o código de país. */
   residencia?: string | null;
+  nascimento?: string | null;
+  rua?: string | null;
+  codigoPostal?: string | null;
+  localidade?: string | null;
 };
 
 const PAIS: Record<string, string> = { acores: 'PT-AC', madeira: 'PT-MA' };
 
 export async function criarFichaCliente(ficha: FichaCliente) {
-  return chamar<{ data?: { id?: string }; id?: string }>('/customers', {
+  const criada = await chamar<{ data?: { id?: string }; id?: string }>('/customers', {
     metodo: 'POST',
     jsonApi: true,
     corpo: {
@@ -267,11 +271,36 @@ export async function criarFichaCliente(ficha: FichaCliente) {
           ...(ficha.nif ? { tax_registration_number: ficha.nif } : {}),
           ...(ficha.email ? { email: ficha.email } : {}),
           ...(ficha.telefone ? { phone_number: ficha.telefone } : {}),
+          ...(ficha.nascimento ? { observations: `Data de nascimento: ${ficha.nascimento}` } : {}),
           country_iso_alpha_2: PAIS[ficha.residencia || ''] || 'PT',
         },
       },
     },
   });
+  if (!criada.ok) return criada;
+
+  /* A morada não entra na criação: o Cegid cria uma sede automaticamente e
+     manda alterá-la pelos endereços. Falhar aqui não invalida a ficha, por
+     isso o resultado da criação é o que conta. */
+  const id = criada.dados?.data?.id || criada.dados?.id;
+  if (id && (ficha.rua || ficha.codigoPostal || ficha.localidade)) {
+    await chamar(`/customers/${id}/addresses`, {
+      metodo: 'POST',
+      jsonApi: true,
+      corpo: {
+        data: {
+          type: 'addresses',
+          attributes: {
+            address: ficha.rua || '',
+            postal_code: ficha.codigoPostal || '',
+            city: ficha.localidade || '',
+            country_iso_alpha_2: PAIS[ficha.residencia || ''] || 'PT',
+          },
+        },
+      },
+    });
+  }
+  return criada;
 }
 
 export type Fatura = { nif: string; nome: string; descricao: string; totalCents: number };

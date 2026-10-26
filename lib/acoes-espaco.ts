@@ -54,28 +54,31 @@ export async function guardarMembro(processo: string, form: FormData): Promise<R
     return { ok: false, erro: 'Escolha a relação de parentesco.' };
 
   const cliente = await supabase();
+  if (!nascimento) return { ok: false, erro: 'Indique a data de nascimento: é dela que depende o IRS Jovem.' };
+
   const { data, error } = await cliente.rpc('guardar_membro_agregado', {
     processo,
-    pessoa: id || null,
-    nome,
-    nif,
-    nascimento: nulo(nascimento),
-    relacao,
-    dois_fatores: ligado(form, 'dois_fatores'),
+    p_pessoa: id || null,
+    p_nome: nome,
+    p_nif: nif,
+    p_nascimento: nascimento,
+    p_relacao: relacao,
+    p_dois_fatores: ligado(form, 'dois_fatores'),
   });
   if (error) return { ok: false, erro: error.message };
 
   // A senha é cifrada aqui e só sai daqui cifrada.
   const senha = String(form.get('senha') || '');
-  if (senha) {
+  if (senha.trim()) {
     const pessoa = String(data);
-    const { error: falha } = await cliente.from('tax_credentials').upsert({
-      person_id: pessoa,
-      account_id: conta,
-      encrypted_password: encryptSecret(senha, `financas:${pessoa}`),
-      updated_at: new Date().toISOString(),
+    // Por função: a tabela não tem GRANT para authenticated, e o upsert
+    // directo falhava sem dizer nada.
+    const { error: falha } = await cliente.rpc('guardar_senha_financas', {
+      processo,
+      p_pessoa: pessoa,
+      p_cifrada: encryptSecret(senha.trim(), `financas:${pessoa}`),
     });
-    if (falha) return { ok: false, erro: falha.message };
+    if (falha) return { ok: false, erro: 'O membro ficou guardado, mas a senha não. Tente outra vez.' };
   }
 
   revalidatePath('/app');

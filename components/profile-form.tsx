@@ -1,4 +1,7 @@
 import { saveProfile } from '@/lib/profile-actions';
+
+const EXPLICACAO_SENHA =
+  'A senha é guardada cifrada e nunca lhe é mostrada de volta. No separador Acompanhamento vê a data e a hora de cada vez que a consultei.';
 import { Submeter } from './forms';
 
 export type PerfilPessoal = {
@@ -147,10 +150,7 @@ export default function FormularioPerfil({
           maxLength={60}
           placeholder={temSenha ? 'Guardada — escreva para substituir' : ''}
         />
-        <span className="micro tenue">
-          Guardada cifrada. Nunca lhe é mostrada de volta, e no separador
-          Acompanhamento vê a data e a hora de cada vez que a consultei.
-        </span>
+        <span className="pista" title={EXPLICACAO_SENHA} aria-label={EXPLICACAO_SENHA}>i</span>
       </label>
 
       <label className="caixa">

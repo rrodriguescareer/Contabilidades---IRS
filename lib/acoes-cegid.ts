@@ -44,7 +44,7 @@ async function titularDoProcesso(processo: string) {
   if (!caso) return null;
   const { data: perfil } = await admin
     .from('profiles')
-    .select('full_name, nif, email, phone, tax_residence')
+    .select('full_name, nif, email, phone, tax_residence, birth_date, street, postal_code, locality')
     .in('id', (
       await admin.from('account_access').select('user_id').eq('account_id', caso.account_id)
     ).data?.map((a) => a.user_id) || [])
@@ -69,6 +69,10 @@ export async function criarFichaCegid(processo: string): Promise<Resposta> {
     email: alvo.perfil.email,
     telefone: alvo.perfil.phone,
     residencia: alvo.perfil.tax_residence,
+    nascimento: alvo.perfil.birth_date,
+    rua: alvo.perfil.street,
+    codigoPostal: alvo.perfil.postal_code,
+    localidade: alvo.perfil.locality,
   });
   if (!r.ok) {
     return {
@@ -132,12 +136,20 @@ export async function criarFichaAposOnboarding(): Promise<{ aviso?: string }> {
   if (!perfil?.nif) return {};
   if (!(await temCredenciais())) return {};
 
+  /* Só o titular tem ficha no Cegid. Os membros do agregado não são clientes
+     do escritório — passam a ser se um dia saírem para conta própria, e aí é
+     esse onboarding que lhes abre a ficha. */
+  const p = perfil as unknown as Record<string, string | null | undefined>;
   const r = await criarFichaCliente({
     nome: perfil.full_name || context.email,
     nif: perfil.nif,
     email: context.email,
     telefone: perfil.phone,
-    residencia: (perfil as { tax_residence?: string }).tax_residence,
+    residencia: p.tax_residence,
+    nascimento: p.birth_date,
+    rua: p.street,
+    codigoPostal: p.postal_code,
+    localidade: p.locality,
   });
   if (r.ok) return {};
   if (r.nifInvalido) {

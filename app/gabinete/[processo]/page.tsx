@@ -1,22 +1,13 @@
-import { notFound } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { gabinete } from '@/lib/auth';
-import { carregarEspaco } from '@/lib/espaco';
 import { uuid } from '@/lib/data';
-import { Processo } from '@/components/gabinete/processo';
 
-export const metadata = { title: 'Processo' };
 export const dynamic = 'force-dynamic';
 
-type Props = { params: Promise<{ processo: string }> };
-
-/** Um processo visto pelo contabilista: tudo numa página, não separador a separador. */
-export default async function ProcessoDoCliente({ params }: Props) {
+/* O processo deixou de ser uma página: abre dentro da consola. Esta rota
+   fica a encaminhar, para as ligações antigas não morrerem. */
+export default async function ProcessoAntigo({ params }: { params: Promise<{ processo: string }> }) {
   await gabinete();
   const { processo } = await params;
-  if (!uuid(processo)) notFound();
-
-  const { dados } = await carregarEspaco('processo', processo, true);
-  if (!dados || dados.erro) notFound();
-
-  return <Processo dados={dados} processo={processo} />;
+  redirect(uuid(processo) ? `/gabinete?processo=${processo}` : '/gabinete');
 }

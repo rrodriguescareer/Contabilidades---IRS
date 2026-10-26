@@ -45,21 +45,21 @@ export async function saveProfile(form:FormData){
   // A senha vai cifrada daqui e nunca volta ao browser.
   const senha=String(form.get('senha_financas')||'');
   if(senha.trim()){
-   // identity() não encaminha: session() redireciona, e apanhar essa
-   // exceção engoliria o próprio redirecionamento do Next.
-   const {identity}=await import('./auth');
-   const {context}=await identity();
-   const processo=context.cases?.[0]?.id;
-   const conta=context.accounts?.[0]?.id;
-   if(processo&&conta){
-    const {data:pessoa}=await client.rpc('pessoa_titular',{processo});
+   /* O identity() está em cache e foi lido antes de o perfil ser gravado:
+      nessa altura ainda não havia processo nenhum, por isso a senha nunca
+      chegava a ser escrita. Pergunta-se à base, que já sabe. */
+   const {data:processo}=await client.from('irs_cases').select('id')
+     .order('tax_year',{ascending:false}).limit(1).maybeSingle();
+   if(processo?.id){
+    const {data:pessoa}=await client.rpc('pessoa_titular',{processo:processo.id});
     if(pessoa){
      const {encryptSecret}=await import('./secret-crypto');
-     await client.from('tax_credentials').upsert({
-      person_id:pessoa,account_id:conta,
-      encrypted_password:encryptSecret(senha.trim(),`financas:${pessoa}`),
-      updated_at:new Date().toISOString(),
+     // A escrita passa por uma função: a tabela não tem GRANT para
+     // authenticated, e o upsert directo falhava sem dizer nada.
+     const {error:semSenha}=await client.rpc('guardar_senha_financas',{
+      processo:processo.id,p_pessoa:pessoa,p_cifrada:encryptSecret(senha.trim(),`financas:${pessoa}`),
      });
+     if(semSenha)fail('Os dados ficaram guardados, mas a senha das Finanças não. Tente outra vez em "A minha conta".',path);
     }
    }
   }

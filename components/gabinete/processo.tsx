@@ -1,5 +1,6 @@
 'use client';
-import Link from 'next/link';
+import { useActionState, useEffect, useRef } from 'react';
+import { enviarMensagem } from '@/lib/acoes';
 import { SEPARADORES, DEDUCOES } from '@/components/espaco/separadores';
 import { ESTADOS, PAGAMENTOS } from './estados';
 import { Avanco } from './avanco';
@@ -29,7 +30,9 @@ const dia = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('pt-
 /* O cliente vê um separador de cada vez. Aqui está tudo na mesma página, em
    colunas: é assim que se confere um processo sem andar para trás e para a
    frente — e é outra disposição, não uma réplica. */
-export function Processo({ dados, processo }: { dados: Dados; processo: string }) {
+export function Processo({
+  dados, processo, aoFechar, aoMudar,
+}: { dados: Dados; processo: string; aoFechar: () => void; aoMudar: () => void }) {
   const cab = (dados.cabecalho as Record<string, never>) || {};
   const membros = (dados.membros as Membro[]) || [];
   const rendimentos = (dados.rendimentos as Rendimento[]) || [];
@@ -44,25 +47,15 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
   const imovel = (id: string | null) => imoveis.find((i) => i.id === id)?.nome || '—';
 
   return (
-    <div className={e.consola}>
-      <header className={e.topo}>
-        <div className={e.barra}>
-          <span className={e.etiqueta}>Gabinete</span>
-          <span className={e.contexto}>
-            <b>{String(cab.cliente || 'Processo')}</b>
-            {cab.nif ? ` · NIF ${cab.nif}` : ''}
-            {cab.residencia ? ` · ${cab.residencia}` : ''}
-          </span>
-          <div className={e.fim}>
-            <a className={e.sair} href={`/gabinete/${processo}/relatorio`}
-               target="_blank" rel="noopener">Relatório</a>
-            <Link href="/gabinete" className={e.sair}>← Voltar à fila</Link>
-          </div>
-        </div>
-      </header>
+    <>
+      <div className={e.voltar}>
+        <button type="button" className={e.sair} onClick={aoFechar}>← Voltar à fila</button>
+        <a className={e.sair} href={`/gabinete/${processo}/relatorio`} target="_blank" rel="noopener">
+          Relatório
+        </a>
+      </div>
 
-      <main id="principal" className={e.painel}>
-        <div className={e.resumoTotais}>
+      <div className={e.resumoTotais}>
           <div className={e.total}>
             <strong>{ESTADOS[String(cab.estado || '')] || String(cab.estado || '—')}</strong>
             <span>Estado · desde {dia(cab.desde as unknown as string)}</span>
@@ -197,18 +190,73 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
           );
         })}
 
-        {mensagens.length > 0 && (
-          <section className={e.bloco}>
-            <h2>Conversa</h2>
-            {mensagens.slice(-6).map((m) => (
-              <p key={m.id}>
-                <strong>{m.do_gabinete ? 'Eu' : 'Cliente'}:</strong> {m.corpo}
-              </p>
-            ))}
-            <Link href={`/app?separador=mensagens`} style={{ display: 'none' }} />
-          </section>
-        )}
-      </main>
-    </div>
+        <Conversa processo={processo} conta={String(cab.conta || '')}
+                  mensagens={mensagens} aoMudar={aoMudar} />
+    </>
+  );
+}
+
+/* A conversa vive dentro do processo: responder sem sair daqui é metade do
+   trabalho de acompanhar um cliente. */
+function Conversa({
+  processo, conta, mensagens, aoMudar,
+}: {
+  processo: string; conta: string;
+  mensagens: { id: string; corpo: string; em: string; do_gabinete: boolean }[];
+  aoMudar: () => void;
+}) {
+  return (
+    <section className={e.bloco}>
+      <h2>Mensagens</h2>
+      {mensagens.length === 0 ? (
+        <p>Ainda não há mensagens neste processo.</p>
+      ) : (
+        <div className={e.conversa}>
+          {mensagens.map((m) => (
+            <article key={m.id} className={e.balao} data-meu={m.do_gabinete}>
+              <p>{m.corpo}</p>
+              <span>
+                {m.do_gabinete ? 'Eu' : 'Cliente'} ·{' '}
+                {new Date(m.em).toLocaleString('pt-PT', {
+                  day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit',
+                })}
+              </span>
+            </article>
+          ))}
+        </div>
+      )}
+      <Responder processo={processo} conta={conta} aoMudar={aoMudar} />
+    </section>
+  );
+}
+
+function Responder({
+  processo, conta, aoMudar,
+}: { processo: string; conta: string; aoMudar: () => void }) {
+  const [estado, accao, aEnviar] = useActionState(enviarMensagem, null);
+  const forma = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (estado?.ok) {
+      forma.current?.reset();
+      aoMudar();
+    }
+  }, [estado, aoMudar]);
+
+  return (
+    <form ref={forma} action={accao} className="pilha pilha-2">
+      <input type="hidden" name="conta" value={conta} />
+      <input type="hidden" name="processo" value={processo} />
+      <label className="campo">
+        <span className="rotulo">Responder ao cliente</span>
+        <textarea name="corpo" rows={3} required maxLength={4000} className="entrada" />
+      </label>
+      {estado && !estado.ok && <p className="aviso-critico">{estado.erro}</p>}
+      <div className="acoes-membro">
+        <button type="submit" className="btn" disabled={aEnviar}>
+          {aEnviar ? 'A enviar…' : 'Enviar'}
+        </button>
+      </div>
+    </form>
   );
 }

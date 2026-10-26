@@ -189,7 +189,8 @@ function Formulario({
       </label>
       <label>
         Data de nascimento
-        <input type="date" name="nascimento" defaultValue={membro?.nascimento || ''} />
+        <input type="date" name="nascimento" defaultValue={membro?.nascimento || ''} required
+               max={new Date().toISOString().slice(0, 10)} />
       </label>
       <label>
         NIF
@@ -224,7 +225,6 @@ function Formulario({
           placeholder={membro?.tem_senha ? 'Guardada — escreva para substituir' : ''}
         />
       </label>
-      <p className="suave nota-senha">{EXPLICACAO_SENHA}</p>
 
       <label className="interruptor">
         <input
