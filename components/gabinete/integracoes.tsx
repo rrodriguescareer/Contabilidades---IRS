@@ -5,7 +5,8 @@ import e from './gabinete.module.css';
 
 /* As credenciais são escritas aqui e guardadas cifradas. Nunca voltam ao
    ecrã: o que se mostra é se existem e se a ligação responde. */
-export function Integracoes({ configurado }: { configurado: boolean }) {
+export function Integracoes({ configurado, origem }:
+  { configurado: boolean; origem: 'ambiente' | 'gabinete' | 'nenhuma' }) {
   const [estado, setEstado] = useState<{ ok?: boolean; texto?: string }>({});
   const [aCorrer, comecar] = useTransition();
 
@@ -13,9 +14,11 @@ export function Integracoes({ configurado }: { configurado: boolean }) {
     <section className={e.bloco}>
       <h2>Cegid Business</h2>
       <p>
-        {configurado
-          ? 'Credenciais guardadas. A autorização é renovada sozinha.'
-          : 'Ainda sem credenciais. Encontra-as no Cegid, em Dados API.'}
+        {origem === 'ambiente'
+          ? 'Credenciais nas variáveis de ambiente da Vercel. O que escrever aqui não as substitui — para as trocar, trocam-se lá.'
+          : configurado
+            ? 'Credenciais guardadas aqui, cifradas. A autorização é renovada sozinha.'
+            : 'Ainda sem credenciais. Encontra-as no Cegid, em Dados API.'}
       </p>
 
       <form

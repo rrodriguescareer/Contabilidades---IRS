@@ -1,7 +1,7 @@
 import { gabinete } from '@/lib/auth';
 import { carregarEspaco } from '@/lib/espaco';
 import { Consola } from '@/components/gabinete/consola';
-import { temCredenciais } from '@/lib/cegid';
+import { origemDasCredenciais, temCredenciais } from '@/lib/cegid';
 
 export const metadata = { title: 'Gabinete' };
 export const dynamic = 'force-dynamic';
@@ -23,6 +23,7 @@ export default async function Gabinete({ searchParams }: Props) {
       vistaInicial={vista}
       dadosIniciais={dados ?? { vista }}
       cegidConfigurado={await temCredenciais()}
+      cegidOrigem={await origemDasCredenciais()}
     />
   );
 }

@@ -31,18 +31,44 @@ type Cofre = {
 
 export type Resultado<T> = { ok: true; dados: T } | { ok: false; erro: string; nifInvalido?: boolean };
 
+/* As credenciais podem vir de dois sítios, por ordem: do ambiente, para o
+   escritório as configurar uma vez e não voltar lá; ou da linha cifrada, para
+   quem preferir escrevê-las no gabinete. Os tokens vivem sempre na base, que
+   é onde sobrevivem a um deploy. */
 async function lerCofre(): Promise<Cofre | null> {
+  const doAmbiente = {
+    identificador: (process.env.CEGID_CLIENT_ID || '').trim(),
+    segredo: (process.env.CEGID_CLIENT_SECRET || '').trim(),
+  };
+
   const { data } = await adminClient()
     .from('integration_secrets')
     .select('encrypted_value')
     .eq('scope', AMBITO)
     .maybeSingle();
-  if (!data?.encrypted_value) return null;
-  try {
-    return JSON.parse(decryptSecret(data.encrypted_value, AMBITO)) as Cofre;
-  } catch {
-    return null;
+
+  let guardado: Partial<Cofre> = {};
+  if (data?.encrypted_value) {
+    try {
+      guardado = JSON.parse(decryptSecret(data.encrypted_value, AMBITO)) as Cofre;
+    } catch {
+      guardado = {};
+    }
   }
+
+  const identificador = doAmbiente.identificador || guardado.identificador || '';
+  const segredo = doAmbiente.segredo || guardado.segredo || '';
+  if (!identificador || !segredo) return null;
+
+  // Tokens de outras credenciais não servem: se mudaram, recomeça-se.
+  const mesmas = guardado.identificador === identificador && guardado.segredo === segredo;
+  return {
+    identificador,
+    segredo,
+    access_token: mesmas ? guardado.access_token : undefined,
+    refresh_token: mesmas ? guardado.refresh_token : undefined,
+    expira_em: mesmas ? guardado.expira_em : undefined,
+  };
 }
 
 async function gravarCofre(cofre: Cofre) {
@@ -59,8 +85,13 @@ export async function guardarCredenciais(identificador: string, segredo: string)
 }
 
 export async function temCredenciais() {
-  const cofre = await lerCofre();
-  return Boolean(cofre?.identificador && cofre?.segredo);
+  return Boolean(await lerCofre());
+}
+
+/** De onde vieram, para o gabinete poder dizê-lo em vez de adivinhar. */
+export async function origemDasCredenciais(): Promise<'ambiente' | 'gabinete' | 'nenhuma'> {
+  if (process.env.CEGID_CLIENT_ID && process.env.CEGID_CLIENT_SECRET) return 'ambiente';
+  return (await lerCofre()) ? 'gabinete' : 'nenhuma';
 }
 
 const basica = (c: Cofre) =>

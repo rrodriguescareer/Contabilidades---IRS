@@ -3,14 +3,15 @@ import { gabinete, session } from './auth';
 import { supabase } from './supabase';
 import { adminClient } from './admin-client';
 import {
-  criarFichaCliente, emitirFaturaRecibo, guardarCredenciais, temCredenciais, testarLigacao,
+  criarFichaCliente, emitirFaturaRecibo, guardarCredenciais, origemDasCredenciais,
+  temCredenciais, testarLigacao,
 } from './cegid';
 
 type Resposta = { ok: boolean; erro?: string; aviso?: string; detalhe?: string };
 
 export async function estadoCegid() {
   await gabinete();
-  return { configurado: await temCredenciais() };
+  return { configurado: await temCredenciais(), origem: await origemDasCredenciais() };
 }
 
 export async function guardarCredenciaisCegid(form: FormData): Promise<Resposta> {

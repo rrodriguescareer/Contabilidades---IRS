@@ -36,8 +36,9 @@ const data = (iso: string | null) =>
 const euros = (c: number | null) =>
   c == null ? '—' : (c / 100).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 
-export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado }:
-  { vistaInicial: string; dadosIniciais: Dados; cegidConfigurado: boolean }) {
+export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado, cegidOrigem }:
+  { vistaInicial: string; dadosIniciais: Dados; cegidConfigurado: boolean;
+    cegidOrigem: 'ambiente' | 'gabinete' | 'nenhuma' }) {
   const [vista, setVista] = useState(vistaInicial);
   const [dados, setDados] = useState(dadosIniciais);
   const [erro, setErro] = useState<string | null>(null);
@@ -91,7 +92,7 @@ export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado }:
         {vista === 'mensagens' && <Conversas dados={dados} />}
         {vista === 'pagamentos' && <Pagamentos dados={dados} />}
         {vista === 'alertas' && <Alertas dados={dados} />}
-        {vista === 'integracoes' && <Integracoes configurado={cegidConfigurado} />}
+        {vista === 'integracoes' && <Integracoes configurado={cegidConfigurado} origem={cegidOrigem} />}
       </main>
     </div>
   );
