@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { useCallback, useRef, useState, useTransition } from 'react';
 import { pedirVistaGabinete } from '@/lib/acoes-espaco';
 import { signOut } from '@/lib/auth-actions';
+import { Integracoes } from './integracoes';
 import e from './gabinete.module.css';
 
 type Dados = Record<string, unknown> & { vista: string };
@@ -12,6 +13,7 @@ const VISTAS = [
   { id: 'mensagens', rotulo: 'Mensagens' },
   { id: 'pagamentos', rotulo: 'Pagamentos' },
   { id: 'alertas', rotulo: 'Alertas' },
+  { id: 'integracoes', rotulo: 'Integrações' },
 ] as const;
 
 const ESTADOS: Record<string, string> = {
@@ -34,7 +36,8 @@ const data = (iso: string | null) =>
 const euros = (c: number | null) =>
   c == null ? '—' : (c / 100).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 
-export function Consola({ vistaInicial, dadosIniciais }: { vistaInicial: string; dadosIniciais: Dados }) {
+export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado }:
+  { vistaInicial: string; dadosIniciais: Dados; cegidConfigurado: boolean }) {
   const [vista, setVista] = useState(vistaInicial);
   const [dados, setDados] = useState(dadosIniciais);
   const [erro, setErro] = useState<string | null>(null);
@@ -44,6 +47,8 @@ export function Consola({ vistaInicial, dadosIniciais }: { vistaInicial: string;
   const ir = useCallback((destino: string) => {
     setVista(destino);
     setErro(null);
+    // As integrações não vêm da base: são um ecrã de configuração.
+    if (destino === 'integracoes') return;
     const guardado = cache.current.get(destino);
     if (guardado) { setDados(guardado); return; }
     comecar(async () => {
@@ -86,6 +91,7 @@ export function Consola({ vistaInicial, dadosIniciais }: { vistaInicial: string;
         {vista === 'mensagens' && <Conversas dados={dados} />}
         {vista === 'pagamentos' && <Pagamentos dados={dados} />}
         {vista === 'alertas' && <Alertas dados={dados} />}
+        {vista === 'integracoes' && <Integracoes configurado={cegidConfigurado} />}
       </main>
     </div>
   );

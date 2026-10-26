@@ -15,7 +15,17 @@ export async function saveProfile(form:FormData){
  if(!street||street.length>300||!/^\d{4}-\d{3}$/.test(postal)||!locality||locality.length>100)fail('Preencha a rua e número, o código postal (0000-000) e a localidade.',path);
  const {error}=await client.rpc('save_personal_profile',{person_name:name,birth,tax_id:nif,telephone:phone,address_street:street,address_postal:postal,address_locality:locality,two_factor:form.has('two_factor')});
  if(error)fail('Não foi possível guardar. Confirme os dados. Se o seu acesso estiver suspenso ou o NIF já existir no agregado, contacte o contabilista.',path);
- revalidatePath('/app');redirect(path==='/perfil'?'/perfil?mensagem=Dados%20guardados.':'/app');
+ revalidatePath('/app');
+ // Fecha-se o onboarding criando a ficha no Cegid. Se o NIF for recusado, o
+ // cliente é avisado — mas o processo segue: um erro de integração não pode
+ // prender alguém a meio do registo.
+ let aviso='';
+ if(path!=='/perfil'){
+  try{const {criarFichaAposOnboarding}=await import('./acoes-cegid');const r=await criarFichaAposOnboarding();aviso=r.aviso||'';}
+  catch{/* a integração não trava o cliente */}
+ }
+ if(aviso)redirect(`/app?aviso=${encodeURIComponent(aviso)}`);
+ redirect(path==='/perfil'?'/perfil?mensagem=Dados%20guardados.':'/app');
 }
 export async function changeEmail(form:FormData){
  if(process.env.AUTH_EMAIL_BRANDING_READY!=='true')fail('A alteração de email está temporariamente indisponível.','/perfil');

@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { SEPARADORES, DEDUCOES } from '@/components/espaco/separadores';
 import { Avanco } from './avanco';
+import { TestesCegid } from './integracoes';
 import e from './gabinete.module.css';
 
 type Dados = Record<string, unknown>;
@@ -68,6 +69,8 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
         </div>
 
         <Avanco processo={processo} estado={String(cab.estado || '')} />
+
+        <TestesCegid processo={processo} />
 
         <p>
           <a className="btn" href={`/gabinete/${processo}/relatorio`} target="_blank" rel="noopener">
