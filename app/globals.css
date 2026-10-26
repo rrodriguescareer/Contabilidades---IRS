@@ -455,3 +455,15 @@
   .tabela-preco .desconto td { color: #1f7a4d; }
   .tabela-preco .total td { font-weight: 800; border-top: 2px solid #0a2344; }
 }
+
+/* O bloco do representante fiscal só aparece fora da UE. Sem JavaScript:
+   é o próprio valor do select que o mostra. */
+@layer components {
+  .formulario-perfil:has(select[name='tax_residence'] option[value='fora_ue']:checked) .representante {
+    display: grid;
+    gap: var(--e-3);
+  }
+  .formulario-perfil:has(select[name='tax_residence'] option[value='fora_ue']:checked) .representante[hidden] {
+    display: grid;
+  }
+}

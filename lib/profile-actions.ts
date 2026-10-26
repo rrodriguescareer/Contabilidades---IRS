@@ -14,6 +14,40 @@ export async function saveProfile(form:FormData){
  if(!/^\+?[0-9 ().-]{7,30}$/.test(phone)||phone.replace(/\D/g,'').length>15||phone.replace(/\D/g,'').length<7)fail('Indique um telemóvel válido.',path);
  if(!street||street.length>300||!/^\d{4}-\d{3}$/.test(postal)||!locality||locality.length>100)fail('Preencha a rua e número, o código postal (0000-000) e a localidade.',path);
  const {error}=await client.rpc('save_personal_profile',{person_name:name,birth,tax_id:nif,telephone:phone,address_street:street,address_postal:postal,address_locality:locality,two_factor:form.has('two_factor')});
+ if(!error){
+  // A residência fiscal e, fora da UE, o representante.
+  const {error:residencia}=await client.rpc('guardar_residencia_fiscal',{
+   residencia:value(form,'tax_residence')||'continente',
+   rep_nome:value(form,'rep_name')||null,
+   rep_contribuinte:value(form,'rep_nif')||null,
+   rep_email:value(form,'rep_email')||null,
+   rep_telefone:value(form,'rep_phone')||null,
+  });
+  if(residencia)fail(residencia.message.includes('representante')
+   ?'Fora da União Europeia é obrigatório indicar o representante fiscal e um contacto.'
+   :'Indique a residência fiscal.',path);
+  // A senha vai cifrada daqui e nunca volta ao browser.
+  const senha=String(form.get('senha_financas')||'');
+  if(senha.trim()){
+   // identity() não encaminha: session() redireciona, e apanhar essa
+   // exceção engoliria o próprio redirecionamento do Next.
+   const {identity}=await import('./auth');
+   const {context}=await identity();
+   const processo=context.cases?.[0]?.id;
+   const conta=context.accounts?.[0]?.id;
+   if(processo&&conta){
+    const {data:pessoa}=await client.rpc('pessoa_titular',{processo});
+    if(pessoa){
+     const {encryptSecret}=await import('./secret-crypto');
+     await client.from('tax_credentials').upsert({
+      person_id:pessoa,account_id:conta,
+      encrypted_password:encryptSecret(senha.trim(),`financas:${pessoa}`),
+      updated_at:new Date().toISOString(),
+     });
+    }
+   }
+  }
+ }
  if(error)fail('Não foi possível guardar. Confirme os dados. Se o seu acesso estiver suspenso ou o NIF já existir no agregado, contacte o contabilista.',path);
  revalidatePath('/app');
  // Fecha-se o onboarding criando a ficha no Cegid. Se o NIF for recusado, o

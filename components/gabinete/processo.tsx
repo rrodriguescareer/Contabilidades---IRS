@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { SEPARADORES, DEDUCOES } from '@/components/espaco/separadores';
+import { ESTADOS, PAGAMENTOS } from './estados';
 import { Avanco } from './avanco';
 import { TestesCegid } from './integracoes';
 import e from './gabinete.module.css';
@@ -43,27 +44,36 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
   const imovel = (id: string | null) => imoveis.find((i) => i.id === id)?.nome || '—';
 
   return (
-    <div className={e.consola} style={{ gridTemplateColumns: '1fr' }}>
-      <div className={e.faixa}>
-        Gabinete
-        <span className={e.cliente}>
-          {String(cab.cliente || 'Processo')}
-          {cab.nif ? ` · NIF ${cab.nif}` : ''}
-          {cab.residencia ? ` · ${cab.residencia}` : ''}
-        </span>
-        <Link href="/gabinete">← Voltar à fila</Link>
-      </div>
+    <div className={e.consola}>
+      <header className={e.topo}>
+        <div className={e.barra}>
+          <span className={e.etiqueta}>Gabinete</span>
+          <span className={e.contexto}>
+            <b>{String(cab.cliente || 'Processo')}</b>
+            {cab.nif ? ` · NIF ${cab.nif}` : ''}
+            {cab.residencia ? ` · ${cab.residencia}` : ''}
+          </span>
+          <div className={e.fim}>
+            <a className={e.sair} href={`/gabinete/${processo}/relatorio`}
+               target="_blank" rel="noopener">Relatório</a>
+            <Link href="/gabinete" className={e.sair}>← Voltar à fila</Link>
+          </div>
+        </div>
+      </header>
 
       <main id="principal" className={e.painel}>
         <div className={e.resumoTotais}>
-          <div className={e.total}><strong>{String(cab.estado || '—')}</strong><span>Estado · desde {dia(cab.desde as unknown as string)}</span></div>
+          <div className={e.total}>
+            <strong>{ESTADOS[String(cab.estado || '')] || String(cab.estado || '—')}</strong>
+            <span>Estado · desde {dia(cab.desde as unknown as string)}</span>
+          </div>
           <div className={e.total}><strong>{membros.length}</strong><span>No agregado</span></div>
           <div className={e.total}><strong>{rendimentos.length}</strong><span>Rendimentos</span></div>
           <div className={e.total}><strong>{documentos.length}</strong><span>Documentos</span></div>
           {checkout && (
             <div className={e.total}>
               <strong>{euros(checkout.total as unknown as number)}</strong>
-              <span>Pagamento · {String(checkout.estado)}</span>
+              <span>Pagamento · {PAGAMENTOS[String(checkout.estado)] || String(checkout.estado)}</span>
             </div>
           )}
         </div>
@@ -72,15 +82,10 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
 
         <TestesCegid processo={processo} />
 
-        <p>
-          <a className="btn" href={`/gabinete/${processo}/relatorio`} target="_blank" rel="noopener">
-            Relatório do processo
-          </a>
-        </p>
-
         <div className={e.colunas}>
           <section className={e.bloco}>
             <h2>Agregado</h2>
+            <div className={e.quadro}>
             <table className={e.tabela}>
               <thead><tr><th>Nome</th><th>NIF</th><th>Nasc.</th><th>Relação</th><th>Senha</th></tr></thead>
               <tbody>
@@ -98,6 +103,7 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
                 ))}
               </tbody>
             </table>
+            </div>
             {membros.some((m) => m.dois_fatores) && (
               <p>Há membros com dois fatores: é preciso contactar antes de submeter.</p>
             )}
@@ -137,6 +143,7 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
             <section key={s.id} className={e.bloco}>
               <h2>{s.titulo}</h2>
               {meus.length > 0 && (
+                <div className={e.quadro}>
                 <table className={e.tabela}>
                   <thead>
                     <tr><th>Titular</th><th>Tipo</th><th>Valor</th><th>Compra/Venda</th><th>Sinais</th></tr>
@@ -162,10 +169,12 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
                     ))}
                   </tbody>
                 </table>
+                </div>
               )}
               {docs.length > 0 && (
                 <>
                   <h3>Documentos</h3>
+                  <div className={e.quadro}>
                   <table className={e.tabela}>
                     <thead><tr><th>Tipo</th><th>Descrição</th><th>Imóvel</th><th>Enviado</th><th>Descargas</th></tr></thead>
                     <tbody>
@@ -180,6 +189,7 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
                       ))}
                     </tbody>
                   </table>
+                  </div>
                 </>
               )}
               {notas[s.categoria] && <p>Nota do cliente: {notas[s.categoria]}</p>}

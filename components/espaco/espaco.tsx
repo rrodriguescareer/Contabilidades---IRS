@@ -102,11 +102,16 @@ function Painel({ conta, processo, nome, estado, vistaInicial, dadosIniciais, te
           ))}
         </nav>
 
-        <p className={e.rodapeLateral}>
-          {nome}
-          <br />
-          IRS 2026
-        </p>
+        {/* Quem está em baixo não é o cliente — é quem trata do processo
+            dele. Saber a quem ligar vale mais do que ver o próprio nome. */}
+        <div className={e.rodapeLateral}>
+          <strong>Rúben Meirinho Rodrigues</strong>
+          <span>Contabilista Certificado</span>
+          <span>Cédula n.º 145854</span>
+          <a href="https://www.rr-contabilidade.com/contacto/" target="_blank" rel="noopener">
+            Contactos
+          </a>
+        </div>
       </aside>
 
       <div>

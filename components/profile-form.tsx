@@ -4,19 +4,24 @@ import { Submeter } from './forms';
 export type PerfilPessoal = {
   full_name: string; birth_date: string | null; nif: string | null;
   phone: string | null; street: string | null; postal_code: string | null; locality: string | null;
+  tax_residence?: string | null;
 };
 
 export default function FormularioPerfil({
   profile,
   twoFactor = false,
   editing = false,
+  temSenha = false,
 }: {
   profile: PerfilPessoal;
   twoFactor?: boolean;
   editing?: boolean;
+  /** Já há senha guardada: o campo fica em branco e só substitui se escrever. */
+  temSenha?: boolean;
 }) {
+  const residencia = profile.tax_residence || 'continente';
   return (
-    <form action={saveProfile} className="pilha pilha-4">
+    <form action={saveProfile} className="pilha pilha-4 formulario-perfil">
       <input type="hidden" name="return" value={editing ? '/perfil' : '/onboarding'} />
 
       <label className="campo">
@@ -100,6 +105,54 @@ export default function FormularioPerfil({
         </label>
       </div>
 
+      <label className="campo">
+        <span className="rotulo">Residência fiscal</span>
+        <select name="tax_residence" className="entrada" defaultValue={residencia} required>
+          <option value="continente">Continente</option>
+          <option value="acores">Açores</option>
+          <option value="madeira">Madeira</option>
+          <option value="ue">Outro país da União Europeia</option>
+          <option value="fora_ue">Fora da União Europeia</option>
+        </select>
+      </label>
+
+      {/* Fora da UE a declaração não entra sem representante fiscal, por isso
+          pergunta-se aqui em vez de descobrir isso em maio. */}
+      <div className="representante" hidden>
+        <label className="campo">
+          <span className="rotulo">Nome do representante fiscal</span>
+          <input name="rep_name" className="entrada" maxLength={200} />
+        </label>
+        <label className="campo">
+          <span className="rotulo">NIF do representante</span>
+          <input name="rep_nif" className="entrada" maxLength={30} />
+        </label>
+        <label className="campo">
+          <span className="rotulo">Email do representante</span>
+          <input name="rep_email" type="email" className="entrada" maxLength={200} />
+        </label>
+        <label className="campo">
+          <span className="rotulo">Telefone do representante</span>
+          <input name="rep_phone" type="tel" className="entrada" maxLength={40} />
+        </label>
+      </div>
+
+      <label className="campo">
+        <span className="rotulo">Senha do Portal das Finanças</span>
+        <input
+          type="password"
+          name="senha_financas"
+          className="entrada"
+          autoComplete="new-password"
+          maxLength={60}
+          placeholder={temSenha ? 'Guardada — escreva para substituir' : ''}
+        />
+        <span className="micro tenue">
+          Guardada cifrada. Nunca lhe é mostrada de volta, e no separador
+          Acompanhamento vê a data e a hora de cada vez que a consultei.
+        </span>
+      </label>
+
       <label className="caixa">
         <input type="checkbox" name="two_factor" defaultChecked={twoFactor} />
         <span className="pequeno">
@@ -110,8 +163,7 @@ export default function FormularioPerfil({
       </label>
 
       <p className="micro tenue">
-        O nome é preenchido por si — não consultamos dados na Autoridade Tributária através do NIF. Nunca
-        introduza aqui senhas das Finanças.
+        O nome é preenchido por si — não consultamos dados na Autoridade Tributária através do NIF.
       </p>
 
       <Submeter>{editing ? 'Guardar dados pessoais' : 'Guardar e começar o IRS'}</Submeter>

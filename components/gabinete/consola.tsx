@@ -4,6 +4,7 @@ import { useCallback, useRef, useState, useTransition } from 'react';
 import { pedirVistaGabinete } from '@/lib/acoes-espaco';
 import { signOut } from '@/lib/auth-actions';
 import { Integracoes } from './integracoes';
+import { ESTADOS, MEUS, PAGAMENTOS } from './estados';
 import e from './gabinete.module.css';
 
 type Dados = Record<string, unknown> & { vista: string };
@@ -16,20 +17,6 @@ const VISTAS = [
   { id: 'integracoes', rotulo: 'Integrações' },
 ] as const;
 
-const ESTADOS: Record<string, string> = {
-  collecting: 'Em recolha',
-  submitted_by_client: 'Submetido',
-  accepted: 'Aceite',
-  validation: 'Em validação',
-  approved: 'Aprovado',
-  submitting: 'Em submissão',
-  filed: 'Submetido na AT',
-  monitoring: 'Acompanhamento',
-  closed: 'Fechado',
-};
-
-/** Estes esperam por mim; o resto espera pelo cliente ou pela AT. */
-const MEUS = ['submitted_by_client', 'accepted', 'validation', 'approved', 'submitting'];
 
 const data = (iso: string | null) =>
   iso ? new Date(iso).toLocaleDateString('pt-PT') : '—';
@@ -64,29 +51,35 @@ export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado, cegidOr
 
   return (
     <div className={e.consola}>
-      <div className={e.faixa}>
-        Gabinete
-        <span className={e.cliente}>Vista do contabilista · todos os processos</span>
-        <form action={signOut}>
-          <button type="submit" className={e.item} style={{ padding: '.2rem .5rem' }}>Sair</button>
-        </form>
-      </div>
+      <header className={e.topo}>
+        <div className={e.barra}>
+          <span className={e.etiqueta}>Gabinete</span>
+          <span className={e.contexto}>
+            <b>IRS 2026</b> · todos os processos
+          </span>
+          <div className={e.fim}>
+            <form action={signOut}>
+              <button type="submit" className={e.sair}>Sair</button>
+            </form>
+          </div>
+        </div>
 
-      <aside className={e.lateral}>
-        {VISTAS.map((v) => (
-          <button key={v.id} type="button" className={e.item} aria-current={v.id === vista}
-                  onClick={() => ir(v.id)}>
-            {v.rotulo}
-            {v.id === 'alertas' && totais?.alertas ? (
-              <span className={e.conta}>{totais.alertas}</span>
-            ) : null}
-          </button>
-        ))}
-      </aside>
+        <nav className={e.vistas} aria-label="Vistas">
+          {VISTAS.map((v) => (
+            <button key={v.id} type="button" className={e.vista} aria-current={v.id === vista}
+                    onClick={() => ir(v.id)}>
+              {v.rotulo}
+              {v.id === 'alertas' && totais?.alertas ? (
+                <span className={e.conta}>{totais.alertas}</span>
+              ) : null}
+            </button>
+          ))}
+        </nav>
+      </header>
 
       <main id="principal" className={e.painel}>
         {erro && <p className="aviso-critico">{erro}</p>}
-        {aCarregar && <p style={{ color: '#7e95b8' }}>A carregar…</p>}
+        {aCarregar && <p className="suave">A carregar…</p>}
 
         {vista === 'fila' && <Fila dados={dados} />}
         {vista === 'mensagens' && <Conversas dados={dados} />}
@@ -112,6 +105,7 @@ function Fila({ dados }: { dados: Dados }) {
       {processos.length === 0 ? (
         <div className={e.vazio}>Ainda não há processos nesta campanha.</div>
       ) : (
+        <div className={e.quadro}>
         <table className={e.tabela}>
           <thead>
             <tr>
@@ -129,13 +123,15 @@ function Fila({ dados }: { dados: Dados }) {
                   </span>
                 </td>
                 <td>{data(p.desde as unknown as string)}</td>
-                <td>{String(p.titulares)}</td>
-                <td>{String(p.rendimentos)}</td>
-                <td>
+                <td className={e.numero}>{String(p.titulares)}</td>
+                <td className={e.numero}>{String(p.rendimentos)}</td>
+                <td className={e.numero}>
                   {String(p.documentos)}
-                  {Number(p.por_rever) > 0 ? ` (${p.por_rever} por rever)` : ''}
+                  {Number(p.por_rever) > 0 ? (
+                    <> · <span className={e.selo} data-urgente="true">{String(p.por_rever)} por rever</span></>
+                  ) : null}
                 </td>
-                <td>{String(p.mensagens)}</td>
+                <td className={e.numero}>{String(p.mensagens)}</td>
                 <td>
                   {p.dois_fatores ? <span className={e.selo} data-urgente="true">2FA</span> : null}{' '}
                   {p.pago ? <span className={e.selo} data-pronto="true">Pago</span> : null}
@@ -144,6 +140,7 @@ function Fila({ dados }: { dados: Dados }) {
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </>
   );
@@ -153,7 +150,7 @@ function Conversas({ dados }: { dados: Dados }) {
   const conversas = (dados.conversas as Record<string, never>[]) || [];
   if (conversas.length === 0) return <div className={e.vazio}>Sem conversas abertas.</div>;
   return (
-    <table className={e.tabela}>
+    <div className={e.quadro}><table className={e.tabela}>
       <thead><tr><th>Cliente</th><th>Mensagens</th><th>Última</th><th>Estado</th></tr></thead>
       <tbody>
         {conversas.map((c: Record<string, never>) => (
@@ -169,7 +166,7 @@ function Conversas({ dados }: { dados: Dados }) {
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }
 
@@ -177,14 +174,16 @@ function Pagamentos({ dados }: { dados: Dados }) {
   const pagamentos = (dados.pagamentos as Record<string, never>[]) || [];
   if (pagamentos.length === 0) return <div className={e.vazio}>Ainda não há pagamentos.</div>;
   return (
-    <table className={e.tabela}>
+    <div className={e.quadro}><table className={e.tabela}>
       <thead><tr><th>Cliente</th><th>Estado</th><th>Total</th><th>Desconto</th><th>Criado</th><th>Pago</th></tr></thead>
       <tbody>
         {pagamentos.map((p: Record<string, never>) => (
           <tr key={String(p.id)}>
             <td><Link href={`/gabinete/${p.processo}`}>{String(p.cliente)}</Link></td>
             <td>
-              <span className={e.selo} data-pronto={String(p.estado) === 'paid'}>{String(p.estado)}</span>
+              <span className={e.selo} data-pronto={String(p.estado) === 'paid'}>
+                {PAGAMENTOS[String(p.estado)] || String(p.estado)}
+              </span>
             </td>
             <td>{euros(p.total as unknown as number)}</td>
             <td>{euros(p.desconto as unknown as number)}</td>
@@ -193,7 +192,7 @@ function Pagamentos({ dados }: { dados: Dados }) {
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }
 
@@ -201,7 +200,7 @@ function Alertas({ dados }: { dados: Dados }) {
   const alertas = (dados.alertas as Record<string, never>[]) || [];
   if (alertas.length === 0) return <div className={e.vazio}>Nada por resolver.</div>;
   return (
-    <table className={e.tabela}>
+    <div className={e.quadro}><table className={e.tabela}>
       <thead><tr><th>Cliente</th><th>Pessoa</th><th>Alerta</th><th>Desde</th></tr></thead>
       <tbody>
         {alertas.map((a: Record<string, never>) => (
@@ -213,6 +212,6 @@ function Alertas({ dados }: { dados: Dados }) {
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }

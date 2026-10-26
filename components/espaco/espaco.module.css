@@ -58,11 +58,23 @@
 
 .rodapeLateral {
   margin-top: auto;
+  display: grid;
+  gap: .1rem;
   font-size: .74rem;
-  line-height: 1.5;
+  line-height: 1.45;
   color: #8ea6c8;
-  padding-inline: var(--e-2, .5rem);
+  padding: var(--e-3, .75rem) var(--e-2, .5rem) 0;
+  border-top: 1px solid #1d3458;
 }
+.rodapeLateral strong { color: #fff; font-size: .8rem; font-weight: 700; }
+.rodapeLateral a {
+  margin-top: .35rem;
+  color: #c6d6ee;
+  font-weight: 650;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.rodapeLateral a:hover { color: #fff; }
 
 .topo {
   display: flex;

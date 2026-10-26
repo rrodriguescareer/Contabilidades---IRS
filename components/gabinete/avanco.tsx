@@ -63,14 +63,14 @@ export function Avanco({ processo, estado }: { processo: string; estado: string 
       {/* Só se pede o valor onde ele existe: na entrega. */}
       {estado === 'submitting' && (
         <div className={e.colunas}>
-          <label style={{ display: 'grid', gap: '.3rem', fontSize: '.8rem' }}>
-            Valor apurado
-            <input value={valor} onChange={(ev) => setValor(ev.target.value)}
+          <label className="campo">
+            <span className="rotulo">Valor apurado</span>
+            <input className="entrada" value={valor} onChange={(ev) => setValor(ev.target.value)}
                    inputMode="decimal" placeholder="0,00" />
           </label>
-          <label style={{ display: 'grid', gap: '.3rem', fontSize: '.8rem' }}>
-            Sentido
-            <select value={sentido} onChange={(ev) => setSentido(ev.target.value)}>
+          <label className="campo">
+            <span className="rotulo">Sentido</span>
+            <select className="entrada" value={sentido} onChange={(ev) => setSentido(ev.target.value)}>
               <option value="refund">A reembolsar</option>
               <option value="payment">A pagar</option>
             </select>
@@ -78,16 +78,16 @@ export function Avanco({ processo, estado }: { processo: string; estado: string 
         </div>
       )}
 
-      <label style={{ display: 'grid', gap: '.3rem', fontSize: '.8rem' }}>
-        Nota para o cliente (opcional)
-        <textarea rows={2} value={nota} onChange={(ev) => setNota(ev.target.value)}
-                  maxLength={5000}
+      <label className="campo">
+        <span className="rotulo">Nota para o cliente (opcional)</span>
+        <textarea className="entrada" rows={2} value={nota}
+                  onChange={(ev) => setNota(ev.target.value)} maxLength={5000}
                   placeholder="Sem nota, o cliente recebe uma explicação do passo." />
       </label>
 
       {erro && <p className="aviso-critico">{erro}</p>}
 
-      <div style={{ display: 'flex', gap: '.5rem', flexWrap: 'wrap' }}>
+      <div className="acoes-membro">
         {passos.map((p) => (
           <button key={p.destino} type="button" className={p.recuo ? 'btn btn-secundario' : 'btn'}
                   disabled={aCorrer} onClick={() => pedir(p.destino)}>
