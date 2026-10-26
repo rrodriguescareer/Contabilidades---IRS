@@ -1,6 +1,7 @@
 'use client';
 import Link from 'next/link';
 import { SEPARADORES, DEDUCOES } from '@/components/espaco/separadores';
+import { Avanco } from './avanco';
 import e from './gabinete.module.css';
 
 type Dados = Record<string, unknown>;
@@ -65,6 +66,8 @@ export function Processo({ dados, processo }: { dados: Dados; processo: string }
             </div>
           )}
         </div>
+
+        <Avanco processo={processo} estado={String(cab.estado || '')} />
 
         <p>
           <a className="btn" href={`/gabinete/${processo}/relatorio`} target="_blank" rel="noopener">

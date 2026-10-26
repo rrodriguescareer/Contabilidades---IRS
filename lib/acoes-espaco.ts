@@ -238,3 +238,30 @@ export async function pedirVistaGabinete(vista: string, processo: string | null)
   );
   return { dados, erro };
 }
+
+/** Fazer o processo andar. As transições válidas são decididas na base. */
+export async function avancarProcesso(
+  processo: string,
+  destino: string,
+  nota = '',
+  valor = '',
+  sentido = '',
+): Promise<Resposta> {
+  await gabinete();
+  const cliente = await supabase();
+  const cents = valor ? Math.round(Number(valor.replace(',', '.')) * 100) : null;
+  if (destino === 'filed' && (cents == null || !Number.isFinite(cents) || cents < 0)) {
+    return { ok: false, erro: 'Indique o valor apurado.' };
+  }
+  const { error } = await cliente.rpc('avancar_processo', {
+    processo,
+    destino,
+    nota: nota.slice(0, 5000),
+    valor_cents: destino === 'filed' ? cents : null,
+    sentido: destino === 'filed' ? sentido : null,
+  });
+  if (error) return { ok: false, erro: error.message };
+  revalidatePath(`/gabinete/${processo}`);
+  revalidatePath('/gabinete');
+  return { ok: true };
+}
