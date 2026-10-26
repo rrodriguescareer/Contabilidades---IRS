@@ -9,6 +9,24 @@ type Resposta = { ok: boolean; erro?: string; resumo?: string };
 
 const BALDE = 'irs-documents';
 
+/* O travão da base recusa com este código. O alerta tem de ser escrito aqui,
+   fora da transação que a exceção abortou — lá dentro, o raise levava o
+   insert com ele e o caso chegava à fila do gabinete sem nenhum sinal. */
+const TRAVAO = 'P0003';
+
+async function marcarParaOGabinete() {
+  try {
+    const cliente = await supabase();
+    await cliente.rpc('marcar_conflito_para_o_gabinete', { motivo: 'travao' });
+  } catch {
+    /* o alerta é um extra: não pode esconder o erro original */
+  }
+}
+
+const MENSAGEM_TRAVAO =
+  'Esse processo já foi submetido ou pago, por isso não posso mexer nele automaticamente. ' +
+  'Avisei o contabilista, que trata disto consigo.';
+
 /** O que está em jogo, para o ecrã poder dizê-lo antes de perguntar. */
 export async function verConflito(nif: string) {
   const cliente = await supabase();
@@ -29,7 +47,13 @@ export async function apagarContaAnterior(nif: string, confirmacao: string): Pro
     contribuinte: nif,
     confirmacao,
   });
-  if (error) return { ok: false, erro: error.message };
+  if (error) {
+    if (error.code === TRAVAO) {
+      await marcarParaOGabinete();
+      return { ok: false, erro: MENSAGEM_TRAVAO };
+    }
+    return { ok: false, erro: error.message };
+  }
 
   const resultado = data as { apagados: Record<string, number>; ficheiros: string[] };
   const ficheiros = resultado.ficheiros || [];
@@ -60,7 +84,13 @@ export async function migrarDoAgregado(nif: string, confirmacao: string): Promis
   const { data: plano, error: erroPlano } = await cliente.rpc('preparar_migracao_do_agregado', {
     contribuinte: nif,
   });
-  if (erroPlano) return { ok: false, erro: erroPlano.message };
+  if (erroPlano) {
+    if (erroPlano.code === TRAVAO) {
+      await marcarParaOGabinete();
+      return { ok: false, erro: MENSAGEM_TRAVAO };
+    }
+    return { ok: false, erro: erroPlano.message };
+  }
 
   const info = plano as {
     processo_antigo: string;
@@ -104,6 +134,7 @@ export async function migrarDoAgregado(nif: string, confirmacao: string): Promis
     documentos: movidos,
   });
   if (error) {
+    if (error.code === TRAVAO) await marcarParaOGabinete();
     // Reverte as cópias: sem as linhas, são lixo.
     for (const m of movidos) {
       try {

@@ -4,7 +4,7 @@ import { useCallback, useRef, useState, useTransition } from 'react';
 import { pedirVistaGabinete } from '@/lib/acoes-espaco';
 import { signOut } from '@/lib/auth-actions';
 import { Integracoes } from './integracoes';
-import { ESTADOS, MEUS, PAGAMENTOS } from './estados';
+import { ALERTAS, ESTADOS, MEUS, PAGAMENTOS } from './estados';
 import e from './gabinete.module.css';
 
 type Dados = Record<string, unknown> & { vista: string };
@@ -207,7 +207,14 @@ function Alertas({ dados }: { dados: Dados }) {
           <tr key={String(a.id)}>
             <td><Link href={`/gabinete/${a.processo}`}>{String(a.cliente)}</Link></td>
             <td>{String(a.pessoa || '—')}</td>
-            <td>{String(a.tipo)}</td>
+            <td>
+              {(() => {
+                const info = ALERTAS[String(a.tipo)];
+                return info
+                  ? <span className={e.selo} data-urgente={info.urgente}>{info.rotulo}</span>
+                  : String(a.tipo);
+              })()}
+            </td>
             <td>{data(a.em as unknown as string)}</td>
           </tr>
         ))}

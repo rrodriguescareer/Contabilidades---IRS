@@ -20,7 +20,10 @@ export async function saveProfile(form:FormData){
  const {data:conflito}=await client.rpc('conflito_de_nif',{contribuinte:nif});
  const tipo=(conflito as {tipo?:string}|null)?.tipo;
  if(tipo==='conta'||tipo==='agregado'){
-  await client.rpc('alertar_conflito_de_nif',{contribuinte:nif,tipo});
+  const {error:semAlerta}=await client.rpc('alertar_conflito_de_nif',{contribuinte:nif,tipo});
+  // O alerta é o que leva o caso até mim: se falhar, quero saber nos registos
+  // em vez de o cliente ficar à espera de um contacto que nunca vem.
+  if(semAlerta)console.info(JSON.stringify({event:'rr_alerta_nif_falhou',erro:semAlerta.message}));
   // O NIF não vai no endereço: é dado pessoal. Vai só o tipo de conflito, e
   // o ecrã pede o número outra vez — o que serve também de reconfirmação.
   redirect(`/onboarding?conflito=${tipo}`);
