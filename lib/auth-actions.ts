@@ -35,7 +35,7 @@ export async function signUp(form: FormData) {
   if(await senhaComprometida(password))error(AVISO_SENHA_COMPROMETIDA,'/registar');
   const origin=siteUrl();if(!origin)error('O registo está temporariamente indisponível. Contacte o profissional.','/registar');
   const client=await supabase();
-  const {error:failure}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${origin}/auth/callback`,data:{terms_accepted:true,terms_version:LEGAL_VERSION,privacy_version:LEGAL_VERSION}}});
+  const {error:failure}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${origin}/auth/callback?next=/app`,data:{terms_accepted:true,terms_version:LEGAL_VERSION,privacy_version:LEGAL_VERSION}}});
   if (failure) error('Não foi possível concluir o registo. Verifique os dados ou tente recuperar o acesso.','/registar');
   redirect('/entrar?mensagem=Confirme%20o%20email%20para%20continuar.%20Depois%20poderá%20preencher%20os%20seus%20dados%20e%20preparar%20o%20IRS.');
 }

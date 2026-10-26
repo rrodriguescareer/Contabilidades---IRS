@@ -24,7 +24,7 @@ export async function changeEmail(form:FormData){
  const {data:staff}=await client.rpc('is_staff');if(staff)fail('O email da conta de administração não pode ser alterado nesta área.','/perfil');
  const origin=siteUrl();if(!origin)fail('Serviço temporariamente indisponível.','/perfil');
  const {error:login}=await client.auth.signInWithPassword({email:user.email!,password});if(login)fail('A palavra-passe atual não foi confirmada.','/perfil');
- const {error}=await client.auth.updateUser({email},{emailRedirectTo:`${origin}/auth/callback`});
+ const {error}=await client.auth.updateUser({email},{emailRedirectTo:`${origin}/auth/callback?next=/perfil`});
  if(error)fail('Não foi possível solicitar a alteração do email.','/perfil');
  redirect('/perfil?mensagem=Confirme%20a%20alteração%20pelas%20ligações%20enviadas%20por%20email.%20O%20endereço%20só%20muda%20após%20confirmação.');
 }
