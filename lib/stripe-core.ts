@@ -81,6 +81,8 @@ export async function stripe<T>(
 export type Sessao = {
   id: string;
   url: string | null;
+  /** Em modo embebido é este que o browser usa para montar o formulário. */
+  client_secret: string | null;
   payment_status: string;
   status: string;
   amount_total: number | null;

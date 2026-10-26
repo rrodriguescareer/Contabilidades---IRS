@@ -6,13 +6,15 @@ import { adminClient } from './admin-client';
 import { uuid } from './data';
 import { stripe, type Sessao } from './stripe-core';
 
-/* O pagamento, com o Stripe Checkout alojado.
+/* O pagamento acontece dentro da plataforma, não numa página do Stripe.
  *
- * Alojado de propósito: os métodos de pagamento são os que estiverem ligados
- * no painel do Stripe. Se eu os escrevesse aqui, ligar o Multibanco amanhã
- * obrigava a mexer em código — e a configuração do painel passava a mentir.
+ * É Checkout em modo embebido: o formulário é desenhado pelo Stripe — que é
+ * quem tem de tocar nos dados do cartão — mas dentro do nosso ecrã, com o
+ * nosso cabeçalho e o nosso resumo ao lado. Assim o cliente não sai da casa,
+ * e os métodos continuam a ser os que estiverem ligados no painel: escritos
+ * em código, ligar o Multibanco amanhã obrigava a mexer aqui.
  */
-export async function pagarComStripe(form: FormData) {
+export async function abrirPagamento(form: FormData) {
   const { client } = await session();
   const conta = String(form.get('account') || '');
   const processo = String(form.get('process') || '');
@@ -51,11 +53,12 @@ export async function pagarComStripe(form: FormData) {
 
   const criada = await stripe<Sessao>('/checkout/sessions', {
     mode: 'payment',
+    ui_mode: 'embedded',
     currency: 'eur',
     locale: 'pt',
     client_reference_id: tentativa.id,
-    success_url: `${origem}/pagamento?sessao={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${origem}${caminho}&erro=${encodeURIComponent('Pagamento cancelado.')}`,
+    // Em modo embebido não há success_url: o Stripe devolve a esta página.
+    return_url: `${origem}/pagamento?sessao={CHECKOUT_SESSION_ID}`,
     line_items: [{
       quantity: 1,
       price_data: {
@@ -71,17 +74,17 @@ export async function pagarComStripe(form: FormData) {
     payment_intent_data: { metadata: { tentativa: tentativa.id } },
   }, { idempotencia: `irs-${tentativa.id}` });
 
-  if (!criada.ok || !criada.dados.url) {
+  if (!criada.ok || !criada.dados.client_secret) {
     falhar('Não foi possível abrir o pagamento. Nada foi cobrado.');
   }
 
   const admin = adminClient();
   const { error: semLigar } = await admin.rpc('anexar_sessao_de_pagamento', {
-    attempt: tentativa.id, provider_id: criada.dados.id, provider_url: criada.dados.url,
+    attempt: tentativa.id, provider_id: criada.dados.id, provider_url: '',
   });
   if (semLigar) falhar('Não foi possível abrir o pagamento. Nada foi cobrado.');
 
-  redirect(criada.dados.url);
+  redirect(`/pagamento/pagar?s=${encodeURIComponent(criada.dados.client_secret)}`);
 }
 
 /* O regresso do Stripe. Não se confia no que vem no endereço: pergunta-se à

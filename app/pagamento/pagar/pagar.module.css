@@ -1,0 +1,103 @@
+/* Duas colunas: o que se está a pagar à esquerda, o formulário à direita.
+   O resumo fica visível enquanto se paga — ninguém deve ter de confiar de
+   memória no valor que viu no ecrã anterior. */
+.ecra {
+  min-block-size: 100dvh;
+  background: var(--fundo, #f3f7fd);
+  padding: clamp(1rem, 4vw, 2.5rem);
+}
+
+.topo {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-inline-size: 60rem;
+  margin: 0 auto clamp(1rem, 3vw, 2rem);
+}
+.logo { inline-size: 3.6rem; block-size: auto; margin-left: auto; }
+.voltar {
+  font-size: .86rem;
+  font-weight: 650;
+  color: var(--texto-suave, #52647d);
+  text-decoration: none;
+}
+.voltar:hover { color: var(--tinta, #0a2344); text-decoration: underline; }
+
+.colunas {
+  max-inline-size: 60rem;
+  margin-inline: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 22rem) minmax(0, 1fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: start;
+}
+
+.resumo {
+  background: #fff;
+  border: 1px solid #e4ebf6;
+  border-radius: 1.1rem;
+  padding: clamp(1.1rem, 3vw, 1.6rem);
+  position: sticky;
+  top: clamp(1rem, 4vw, 2.5rem);
+}
+.resumo h1 {
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -.03em;
+  color: var(--tinta, #0a2344);
+}
+.cliente { margin: .2rem 0 1rem; font-size: .85rem; color: var(--texto-suave, #52647d); }
+
+.tabela { inline-size: 100%; border-collapse: collapse; font-size: .85rem; }
+.tabela td { padding: .45rem 0; vertical-align: top; color: var(--texto, #11223c); }
+.tabela td:last-child { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.tabela tbody tr + tr td { border-top: 1px solid #f0f5fc; }
+.desconto td { color: #1a6b45; }
+.tabela tfoot td {
+  border-top: 2px solid var(--tinta, #0a2344);
+  padding-top: .6rem;
+  font-weight: 800;
+  font-size: 1rem;
+}
+.iva { margin: .5rem 0 0; font-size: .74rem; color: var(--texto-ténue, #8a97ac); }
+
+.garantias {
+  margin: 1.1rem 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: .45rem;
+  border-top: 1px solid #eef3fb;
+  padding-top: 1rem;
+}
+.garantias li {
+  font-size: .8rem;
+  line-height: 1.5;
+  color: var(--texto-suave, #52647d);
+  padding-left: 1.2rem;
+  position: relative;
+}
+.garantias li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: .42em;
+  inline-size: .5rem;
+  block-size: .28rem;
+  border-left: 2px solid var(--acento, #2867f8);
+  border-bottom: 2px solid var(--acento, #2867f8);
+  transform: rotate(-45deg);
+}
+
+.formulario {
+  background: #fff;
+  border: 1px solid #e4ebf6;
+  border-radius: 1.1rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
+  min-block-size: 26rem;
+}
+
+@media (max-width: 860px) {
+  .colunas { grid-template-columns: 1fr; }
+  .resumo { position: static; }
+}
