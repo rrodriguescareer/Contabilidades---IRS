@@ -224,3 +224,17 @@ export async function orcamento(processo: string, cupao = '') {
   if (error) return { dados: null, erro: error.message };
   return { dados: data as Record<string, unknown>, erro: null };
 }
+
+/* ------------------------------------------------------------ gabinete */
+import { gabinete } from './auth';
+
+/** Uma vista da consola. Só para quem é do gabinete. */
+export async function pedirVistaGabinete(vista: string, processo: string | null) {
+  await gabinete();
+  const { dados, erro } = await carregarEspaco(
+    ['fila', 'mensagens', 'pagamentos', 'alertas', 'processo'].includes(vista) ? vista : 'fila',
+    processo,
+    true,
+  );
+  return { dados, erro };
+}

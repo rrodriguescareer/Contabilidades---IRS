@@ -1,0 +1,132 @@
+/* A consola do contabilista tem de ser reconhecível ao primeiro olhar.
+ *
+ * O espaço do cliente é claro, com cartões largos e muito ar. Aqui é o
+ * contrário: fundo escuro, faixa de identificação sempre visível e tabelas
+ * densas. Não é decoração — é para nunca haver dúvida sobre que lado se está
+ * a ver, que foi o problema da versão anterior. */
+.consola {
+  display: grid;
+  grid-template-columns: 15rem 1fr;
+  min-block-size: 100dvh;
+  background: #0d1b2f;
+  color: #dbe6f6;
+}
+
+/* A faixa atravessa a consola inteira, por cima de tudo. */
+.faixa {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  padding: .5rem 1.2rem;
+  background: var(--acento, #2867f8);
+  color: #fff;
+  font-size: .78rem;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.faixa .cliente { text-transform: none; letter-spacing: 0; font-weight: 600; opacity: .92; }
+.faixa a { color: #fff; margin-left: auto; text-transform: none; letter-spacing: 0; }
+
+.lateral {
+  padding: 1.2rem .9rem;
+  border-right: 1px solid #1d2f4a;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.item {
+  display: flex;
+  align-items: center;
+  gap: .6rem;
+  padding: .6rem .7rem;
+  border: 0;
+  border-radius: .5rem;
+  background: transparent;
+  color: #a9bcd6;
+  font: inherit;
+  font-size: .88rem;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+.item:hover { background: #16243c; color: #fff; }
+.item[aria-current='true'] { background: #16243c; color: #fff; box-shadow: inset 3px 0 0 var(--acento, #2867f8); }
+.conta {
+  margin-left: auto;
+  font-size: .72rem;
+  font-weight: 800;
+  background: #24405f;
+  border-radius: 999px;
+  padding: .08rem .42rem;
+}
+
+.painel { padding: 1.2rem; display: grid; gap: 1rem; align-content: start; }
+
+.resumoTotais { display: flex; gap: .6rem; flex-wrap: wrap; }
+.total {
+  background: #16243c;
+  border: 1px solid #1d2f4a;
+  border-radius: .7rem;
+  padding: .7rem 1rem;
+  min-inline-size: 8rem;
+}
+.total strong { display: block; font-size: 1.5rem; line-height: 1.1; color: #fff; }
+.total span { font-size: .74rem; color: #93a8c6; }
+
+/* Tabela densa: o contabilista quer ver muitos processos de uma vez. */
+.tabela { inline-size: 100%; border-collapse: collapse; font-size: .85rem; }
+.tabela th {
+  text-align: left;
+  font-size: .7rem;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+  color: #7e95b8;
+  padding: .5rem .6rem;
+  border-bottom: 1px solid #1d2f4a;
+}
+.tabela td { padding: .55rem .6rem; border-bottom: 1px solid #16243c; vertical-align: top; }
+.tabela tbody tr:hover { background: #13203a; }
+.tabela a { color: #fff; font-weight: 650; }
+
+.selo {
+  display: inline-block;
+  font-size: .68rem;
+  font-weight: 800;
+  padding: .12rem .45rem;
+  border-radius: 999px;
+  background: #24405f;
+  color: #cfe0f7;
+  white-space: nowrap;
+}
+.selo[data-urgente='true'] { background: #7a2b28; color: #ffd9d6; }
+.selo[data-pronto='true'] { background: #1f4d36; color: #c8f0da; }
+
+.bloco {
+  background: #16243c;
+  border: 1px solid #1d2f4a;
+  border-radius: .8rem;
+  padding: 1rem 1.1rem;
+  display: grid;
+  gap: .6rem;
+}
+.bloco h2 { font-size: .95rem; margin: 0; color: #fff; }
+.bloco h3 { font-size: .82rem; margin: .4rem 0 0; color: #a9bcd6; }
+.bloco p { margin: 0; font-size: .84rem; color: #a9bcd6; }
+
+.colunas { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 1rem; }
+
+.vazio {
+  border: 1px dashed #27405f;
+  border-radius: .7rem;
+  padding: 1.2rem;
+  text-align: center;
+  color: #7e95b8;
+  font-size: .85rem;
+}
+
+@media (max-width: 900px) {
+  .consola { grid-template-columns: 1fr; }
+  .lateral { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid #1d2f4a; }
+}

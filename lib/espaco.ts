@@ -15,7 +15,8 @@ export const VISTAS_CLIENTE = [
   'mensagens',
 ] as const;
 
-export const VISTAS_GABINETE = ['fila', 'alertas', ...VISTAS_CLIENTE] as const;
+/* A consola não espelha os separadores do cliente: tem os seus. */
+export const VISTAS_GABINETE = ['fila', 'mensagens', 'pagamentos', 'alertas', 'processo'] as const;
 
 export type VistaCliente = (typeof VISTAS_CLIENTE)[number];
 export type VistaGabinete = (typeof VISTAS_GABINETE)[number];

@@ -1,30 +1,21 @@
 import { gabinete } from '@/lib/auth';
 import { carregarEspaco } from '@/lib/espaco';
-import { Portal } from '@/components/portal/portal';
+import { Consola } from '@/components/gabinete/consola';
 
 export const metadata = { title: 'Gabinete' };
 export const dynamic = 'force-dynamic';
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-/** Fila de trabalho do contabilista: todos os processos da campanha. */
+const VISTAS = ['fila', 'mensagens', 'pagamentos', 'alertas'];
+
+/** A consola do contabilista: a fila de trabalho e tudo o que a serve. */
 export default async function Gabinete({ searchParams }: Props) {
   await gabinete();
   const procura = await searchParams;
-  const vista = procura.separador === 'alertas' ? 'alertas' : 'fila';
+  const pedida = typeof procura.separador === 'string' ? procura.separador : '';
+  const vista = VISTAS.includes(pedida) ? pedida : 'fila';
   const { dados } = await carregarEspaco(vista, null, true);
 
-  return (
-    <Portal
-      gabinete
-      conta=""
-      processo={null}
-      estado=""
-      rotulo="Gabinete · IRS 2026"
-      nome="Todos os processos"
-      separadores={['fila', 'alertas']}
-      vistaInicial={vista}
-      dadosIniciais={dados ?? { vista }}
-    />
-  );
+  return <Consola vistaInicial={vista} dadosIniciais={dados ?? { vista }} />;
 }
