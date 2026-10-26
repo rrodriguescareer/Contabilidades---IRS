@@ -13,6 +13,19 @@ export async function saveProfile(form:FormData){
  const invalid=personError(name,birth,nif);if(invalid)fail(invalid,path);
  if(!/^\+?[0-9 ().-]{7,30}$/.test(phone)||phone.replace(/\D/g,'').length>15||phone.replace(/\D/g,'').length<7)fail('Indique um telemóvel válido.',path);
  if(!street||street.length>300||!/^\d{4}-\d{3}$/.test(postal)||!locality||locality.length>100)fail('Preencha a rua e número, o código postal (0000-000) e a localidade.',path);
+ /* O NIF pode já estar noutra conta ou noutro agregado. Dizê-lo aqui, antes
+    de falhar numa violação de unicidade sem explicação, e deixar o alerta
+    para o gabinete. As saídas — apagar a conta anterior ou migrar do outro
+    agregado — não são automáticas: mexem em dados de terceiros. */
+ const {data:conflito}=await client.rpc('conflito_de_nif',{contribuinte:nif});
+ const tipo=(conflito as {tipo?:string}|null)?.tipo;
+ if(tipo==='conta'||tipo==='agregado'){
+  await client.rpc('alertar_conflito_de_nif',{contribuinte:nif,tipo});
+  fail(tipo==='conta'
+   ?'Este NIF já está associado a outra conta. Avisei o contabilista, que entra em contacto para resolver — não precisa de fazer mais nada.'
+   :'Este NIF já consta no agregado de outra conta. Avisei o contabilista, que entra em contacto para o separar e migrar os seus dados.',path);
+ }
+
  const {error}=await client.rpc('save_personal_profile',{person_name:name,birth,tax_id:nif,telephone:phone,address_street:street,address_postal:postal,address_locality:locality,two_factor:form.has('two_factor')});
  if(!error){
   // A residência fiscal e, fora da UE, o representante.
