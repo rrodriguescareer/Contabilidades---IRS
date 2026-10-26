@@ -303,3 +303,91 @@
   .maiusc { text-transform: uppercase; letter-spacing: .09em; font-size: var(--t-xs); font-weight: 700; }
   .sem-quebra { white-space: nowrap; }
 }
+
+/* ---------------------------------------------- espaço do cliente (IRS) */
+/* Ficam no global porque são usadas pelos formulários de vários separadores
+   e porque herdam os tokens de cor e espaço já definidos acima. */
+@layer components {
+  .linha-membro {
+    display: flex;
+    gap: var(--e-3);
+    align-items: flex-start;
+    justify-content: space-between;
+    padding: var(--e-3) 0;
+    border-top: 1px solid #eef3fb;
+  }
+  .linha-membro:first-of-type { border-top: 0; }
+  .linha-membro p { margin: .15rem 0 0; font-size: .85rem; }
+
+  .acoes-membro { display: flex; gap: .5rem; align-items: center; flex-wrap: wrap; }
+
+  .form-membro {
+    display: grid;
+    gap: var(--e-3);
+    padding: var(--e-4);
+    border: 1px solid #d7e3f4;
+    border-radius: .9rem;
+    background: #fbfcfe;
+  }
+  .form-membro label { display: grid; gap: .3rem; font-size: .85rem; font-weight: 650; }
+  .form-membro input:not([type='checkbox']),
+  .form-membro select,
+  .form-membro textarea {
+    font: inherit;
+    padding: .62rem .7rem;
+    border: 1px solid #d7e3f4;
+    border-radius: .55rem;
+    background: #fff;
+    inline-size: 100%;
+  }
+
+  /* O interruptor é uma caixa de seleção com o rótulo ao lado, não por cima. */
+  .interruptor {
+    display: flex !important;
+    align-items: center;
+    gap: .55rem;
+    font-weight: 600;
+  }
+  .interruptor input { inline-size: 1.05rem; block-size: 1.05rem; }
+
+  .bloco-encadeado {
+    display: grid;
+    gap: var(--e-3);
+    padding-left: var(--e-4);
+    border-left: 2px solid #cdddf2;
+  }
+
+  .bloco-imoveis { display: grid; gap: var(--e-3); }
+  .bloco-imoveis h3 { font-size: .95rem; margin: 0; }
+  .lista-simples { margin: 0; padding-left: 1.1rem; font-size: .88rem; color: var(--apoio, #52647d); }
+
+  /* O "i" que explica como a senha é guardada. */
+  .pista {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    margin-left: .35rem;
+    border-radius: 999px;
+    background: #dde8fa;
+    color: #1b4ba8;
+    font-size: .72rem;
+    font-weight: 800;
+    cursor: help;
+  }
+  .nota-senha { font-size: .78rem; margin: -.4rem 0 0; }
+
+  .btn-texto {
+    background: none;
+    border: 0;
+    padding: .5rem .2rem;
+    color: var(--apoio, #52647d);
+    font: inherit;
+    font-size: .85rem;
+    font-weight: 650;
+    text-decoration: underline;
+    cursor: pointer;
+  }
+  .btn-texto:hover { color: #b4332f; }
+}

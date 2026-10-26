@@ -5,14 +5,14 @@ import { supabase } from './supabase';
    As funções espaco_irs / espaco_gabinete devolvem o ecrã inteiro num só JSON,
    em vez das quatro a onze chamadas PostgREST que cada vista fazia antes. */
 
+/* Pela ordem do menu lateral. O primeiro é o destino por omissão. */
 export const VISTAS_CLIENTE = [
-  'resumo',
   'agregado',
   'rendimentos',
   'documentos',
-  'mensagens',
   'progresso',
   'pagamento',
+  'mensagens',
 ] as const;
 
 export const VISTAS_GABINETE = ['fila', 'alertas', ...VISTAS_CLIENTE] as const;
@@ -26,7 +26,7 @@ export function vistaValida(valor: unknown, gabinete = false): string {
   const lista: readonly string[] = gabinete ? VISTAS_GABINETE : VISTAS_CLIENTE;
   const texto = typeof valor === 'string' ? valor : '';
   if (lista.includes(texto)) return texto;
-  return gabinete ? 'fila' : 'resumo';
+  return gabinete ? 'fila' : 'agregado';
 }
 
 export async function carregarEspaco(vista: string, processo: string | null, gabinete = false) {

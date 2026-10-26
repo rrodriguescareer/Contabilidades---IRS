@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { session } from '@/lib/auth';
-import { carregarEspaco, VISTAS_CLIENTE, vistaValida } from '@/lib/espaco';
-import { Portal } from '@/components/portal/portal';
+import { carregarEspaco, vistaValida } from '@/lib/espaco';
+import { Espaco } from '@/components/espaco/espaco';
 
 export const metadata = { title: 'O meu IRS' };
 export const dynamic = 'force-dynamic';
@@ -35,14 +35,11 @@ export default async function AreaCliente({ searchParams }: Props) {
   const { dados } = await carregarEspaco(vista, processo.id);
 
   return (
-    <Portal
-      gabinete={false}
+    <Espaco
       conta={conta.id}
       processo={processo.id}
       estado={processo.status}
-      rotulo="IRS 2026"
       nome={context.profile.full_name || context.email}
-      separadores={VISTAS_CLIENTE}
       vistaInicial={vista}
       dadosIniciais={dados ?? { vista }}
     />
