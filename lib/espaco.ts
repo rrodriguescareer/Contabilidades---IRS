@@ -7,6 +7,7 @@ import { supabase } from './supabase';
 
 /* Pela ordem do menu lateral. O primeiro é o destino por omissão. */
 export const VISTAS_CLIENTE = [
+  'inicio',
   'agregado',
   'rendimentos',
   'documentos',
@@ -22,16 +23,16 @@ export type Espaco = Record<string, unknown> & { vista: string; processo?: strin
 export function vistaValida(valor: unknown): string {
   const lista: readonly string[] = VISTAS_CLIENTE;
   const texto = typeof valor === 'string' ? valor : '';
-  return lista.includes(texto) ? texto : 'agregado';
+  return lista.includes(texto) ? texto : 'inicio';
 }
 
 /* Só o espaço do cliente: o gabinete vive na plataforma de gestão. */
 export async function carregarEspaco(vista: string, processo: string | null) {
   const cliente = await supabase();
 
-  /* O acompanhamento tem a sua função: precisa da prontidão, das contagens e
-     do pagamento, que o espaco_irs não traz — e aquela já serve sete vistas. */
-  if (vista === 'progresso') {
+  /* O Início, o Acompanhamento e o Pagamento leem a mesma função: precisam
+     da prontidão, das contagens e do pagamento, que o espaco_irs não traz. */
+  if (vista === 'inicio' || vista === 'progresso' || vista === 'pagamento') {
     const { data, error } = await cliente.rpc('espaco_progresso', { processo });
     if (error) return { dados: null, erro: error.message };
     return { dados: { ...(data || {}), vista, processo } as Espaco, erro: null };

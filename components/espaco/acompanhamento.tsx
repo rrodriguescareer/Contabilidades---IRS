@@ -1,8 +1,6 @@
 'use client';
-import { useState, useTransition } from 'react';
-import { submeterProcesso } from '@/lib/acoes-espaco';
 import { FASES, LINHA, QUEM, eDesvio, estadoDe, posicao, type Prontidao } from '@/lib/fluxo';
-import type { Dados } from './espaco';
+import type { Dados, Vista } from './espaco';
 import e from './espaco.module.css';
 
 const data = (iso: string) =>
@@ -20,7 +18,7 @@ type Evento = { id: string; titulo: string; corpo: string; em: string };
    aconteceu são os eventos verdadeiros, o que falta são os passos por vir — com
    as quatro fases em cima e, quando é a vez do cliente, o que falta e o botão
    de submeter. */
-export function Acompanhamento({ dados, processo }: { dados: Dados; processo: string }) {
+export function Acompanhamento({ dados, ir }: { dados: Dados; ir: (v: Vista) => void }) {
   const proc = (dados.processo as {
     estado: string; desde: string; submetido_em: string | null; ano: number | null;
     valor_final: number | null; sentido: string | null;
@@ -75,14 +73,32 @@ export function Acompanhamento({ dados, processo }: { dados: Dados; processo: st
         )}
       </section>
 
-      {/* 3. O que falta da parte do cliente, e a submissão. */}
-      {meus.length > 0 && (
-        <ParaSubmeter
-          processo={processo}
-          itens={meus}
-          podeSubmeter={podeSubmeter}
-          devolvido={proc?.estado === 'returned'}
-        />
+      {/* 3. O que falta da parte do cliente. Submeter é pagar: o botão leva lá. */}
+      {podeSubmeter && meus.length > 0 && (
+        <section className={e.cartao}>
+          <h2>{proc?.estado === 'returned' ? 'Para submeter outra vez' : 'Antes de submeter'}</h2>
+          {proc?.estado === 'returned' && (
+            <p className="aviso-atencao">
+              Devolvi-lhe o processo para completar. Veja a nota no percurso, corrija o que falta e submeta outra vez.
+            </p>
+          )}
+          <ul className="prontidao">
+            {meus.map((p) => (
+              <li key={p.chave} data-estado={p.estado}>
+                <span className="marca-pronto" aria-hidden="true" />
+                <div>
+                  <strong>{p.rotulo}</strong>
+                  <p className="suave">{p.detalhe}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="acoes-membro">
+            <button type="button" className="btn" onClick={() => ir('pagamento')}>
+              {proc?.estado === 'returned' ? 'Submeter outra vez' : 'Rever o preço e submeter'}
+            </button>
+          </div>
+        </section>
       )}
 
       {/* 4. Uma linha só: o que aconteceu e o que falta acontecer. */}
@@ -146,86 +162,5 @@ export function Acompanhamento({ dados, processo }: { dados: Dados; processo: st
         )}
       </section>
     </>
-  );
-}
-
-/* A lista de prontidão é a mesma que eu vejo no gabinete. Aqui serve para o
-   cliente saber exactamente o que o separa de submeter. */
-function ParaSubmeter({
-  processo, itens, podeSubmeter, devolvido,
-}: { processo: string; itens: Prontidao[]; podeSubmeter: boolean; devolvido: boolean }) {
-  const [erro, setErro] = useState<string | null>(null);
-  const [faltas, setFaltas] = useState<string[]>([]);
-  const [feito, setFeito] = useState(false);
-  const [aEnviar, enviar] = useTransition();
-
-  const bloqueios = itens.filter((p) => p.bloqueia && p.estado === 'falta');
-
-  const submeter = () =>
-    enviar(async () => {
-      setErro(null); setFaltas([]);
-      const r = await submeterProcesso(processo);
-      if (!r.ok) {
-        setErro(r.erro || 'Não foi possível submeter.');
-        setFaltas(r.faltas || []);
-        return;
-      }
-      setFeito(true);
-    });
-
-  return (
-    <section className={e.cartao}>
-      <h2>{podeSubmeter ? 'Antes de submeter' : 'A sua parte do processo'}</h2>
-      {devolvido && (
-        <p className="aviso-atencao">
-          Devolvi-lhe o processo para completar. Veja a nota no percurso, corrija o que falta e
-          submeta outra vez.
-        </p>
-      )}
-
-      <ul className="prontidao">
-        {itens.map((p) => (
-          <li key={p.chave} data-estado={p.estado}>
-            <span className="marca-pronto" aria-hidden="true" />
-            <div>
-              <strong>{p.rotulo}</strong>
-              <p className="suave">{p.detalhe}</p>
-            </div>
-          </li>
-        ))}
-      </ul>
-
-      {podeSubmeter && (
-        <>
-          {bloqueios.length > 0 ? (
-            <p className="aviso-atencao">
-              Falta {bloqueios.map((b) => b.rotulo.toLowerCase()).join(', ')} para poder submeter.
-            </p>
-          ) : (
-            <p className="suave">
-              Ao submeter, o processo entra na minha fila e deixa de poder ser alterado até eu o
-              devolver ou aceitar.
-            </p>
-          )}
-          {erro && (
-            <p className="aviso-critico">
-              {erro}
-              {faltas.length > 0 ? ` Em falta: ${faltas.join(', ')}.` : ''}
-            </p>
-          )}
-          {feito && <p className="aviso-positivo">Processo submetido. Aviso-o quando o aceitar.</p>}
-          <div className="acoes-membro">
-            <button
-              type="button"
-              className="btn"
-              disabled={aEnviar || bloqueios.length > 0 || feito}
-              onClick={submeter}
-            >
-              {aEnviar ? 'A submeter…' : 'Submeter o processo'}
-            </button>
-          </div>
-        </>
-      )}
-    </section>
   );
 }

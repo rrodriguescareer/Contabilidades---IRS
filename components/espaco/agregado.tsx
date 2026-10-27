@@ -216,9 +216,11 @@ function Formulario({
       )}
 
       <label>
-        Senha do Portal das Finanças
-        <span className="pista" title={EXPLICACAO_SENHA} aria-label={EXPLICACAO_SENHA}>
-          i
+        <span>
+          Senha do Portal das Finanças
+          <span className="pista" title={EXPLICACAO_SENHA} aria-label={EXPLICACAO_SENHA}>
+            i
+          </span>
         </span>
         <input
           type="password"

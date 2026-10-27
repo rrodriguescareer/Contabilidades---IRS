@@ -149,6 +149,7 @@ export async function desistirDoPagamento(tentativa: string) {
 
 function traduzir(mensagem?: string) {
   if (!mensagem) return 'Não foi possível iniciar o pagamento.';
+  if (mensagem.includes('Incomplete case')) return 'Falta completar o processo antes de pagar.';
   if (mensagem.includes('Price changed')) return 'O preço mudou entretanto. Reveja-o antes de confirmar.';
   if (mensagem.includes('not collecting')) return 'Este processo já foi submetido.';
   if (mensagem.includes('Holder missing')) return 'Falta o titular no agregado.';

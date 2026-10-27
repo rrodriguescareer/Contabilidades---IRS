@@ -735,3 +735,117 @@
 @layer components {
   .btn-pequeno { padding: .38rem .8rem; font-size: var(--t-sm); }
 }
+
+/* ------------------------------------------- espaço do cliente, revisto */
+/* Os formulários dos separadores (agregado, rendimentos, deduções) partilham
+   estas classes. Linhas como cartões leves, campos todos com a mesma altura e
+   moldura, e os interruptores como interruptores — de deslizar, como foram
+   pedidos ("swipe"), em vez de caixas de seleção. */
+@layer components {
+  .linha-membro {
+    align-items: center;
+    padding: .85rem 1rem;
+    margin: 0;
+    border: 1px solid var(--linha);
+    border-radius: .85rem;
+    background: var(--superficie);
+    transition: border-color .15s ease;
+  }
+  .linha-membro + .linha-membro { margin-block-start: .5rem; }
+  .linha-membro:first-of-type { border-top: 1px solid var(--linha); }
+  .linha-membro:hover { border-color: var(--linha-forte); }
+  .linha-membro strong { font-size: var(--t-base); }
+  .linha-membro p { margin: .2rem 0 0; font-size: var(--t-sm); }
+
+  .form-membro {
+    gap: var(--e-4);
+    padding: var(--e-5);
+    border: 1px solid var(--linha-forte);
+    border-radius: 1rem;
+    background: var(--superficie-2);
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    align-items: end;
+  }
+  .form-membro > :is(.interruptor, .aviso-atencao, .aviso-critico, .aviso-positivo, .acoes-membro, .bloco-encadeado, input[type='hidden'], p, h3) {
+    grid-column: 1 / -1;
+  }
+  .form-membro label {
+    gap: .35rem;
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--texto-suave);
+  }
+  .form-membro input:not([type='checkbox']):not([type='radio']),
+  .form-membro select,
+  .form-membro textarea,
+  .bloco-imoveis input:not([type='checkbox']) {
+    font: inherit;
+    font-size: .92rem;
+    color: var(--texto);
+    padding: .65rem .8rem;
+    border: 1px solid var(--linha-forte);
+    border-radius: .6rem;
+    background-color: var(--superficie);
+    inline-size: 100%;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+  .form-membro :is(input, select, textarea):focus,
+  .bloco-imoveis input:focus {
+    outline: none;
+    border-color: var(--acao);
+    box-shadow: 0 0 0 3px var(--anel);
+  }
+
+  /* O interruptor de deslizar. */
+  .interruptor {
+    gap: .7rem;
+    font-size: var(--t-sm);
+    font-weight: 600;
+    color: var(--texto) !important;
+    cursor: pointer;
+  }
+  .interruptor input[type='checkbox'] {
+    appearance: none;
+    -webkit-appearance: none;
+    flex: none;
+    position: relative;
+    inline-size: 2.5rem;
+    block-size: 1.45rem;
+    margin: 0;
+    border-radius: 999px;
+    background: var(--linha-forte);
+    cursor: pointer;
+    transition: background-color .2s ease;
+  }
+  .interruptor input[type='checkbox']::after {
+    content: '';
+    position: absolute;
+    inset-block-start: .17rem;
+    inset-inline-start: .17rem;
+    inline-size: 1.1rem;
+    block-size: 1.1rem;
+    border-radius: 999px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgb(10 35 68 / .3);
+    transition: transform .2s cubic-bezier(.3, 1.4, .5, 1);
+  }
+  .interruptor input[type='checkbox']:checked { background: var(--acao); }
+  .interruptor input[type='checkbox']:checked::after { transform: translateX(1.05rem); }
+  .interruptor input[type='checkbox']:focus-visible { outline: 2px solid var(--acao); outline-offset: 2px; }
+  .interruptor input[type='checkbox']:disabled { opacity: .5; cursor: not-allowed; }
+
+  .bloco-encadeado { padding-inline-start: var(--e-4); border-inline-start: 2px solid var(--acao-suave); }
+
+  .bloco-imoveis {
+    padding: var(--e-4);
+    border-radius: .85rem;
+    background: var(--superficie-2);
+    border: 1px solid var(--linha);
+  }
+  .bloco-imoveis h3 { font-size: var(--t-sm); text-transform: uppercase; letter-spacing: .05em; color: var(--texto-suave); }
+  .bloco-imoveis form { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--e-2); align-items: end; }
+  .bloco-imoveis form label { display: grid; gap: .3rem; font-size: var(--t-sm); font-weight: 600; color: var(--texto-suave); }
+
+  .lista-simples { padding-inline-start: 1.1rem; font-size: var(--t-sm); color: var(--texto-suave); }
+  .lista-simples li + li { margin-block-start: .2rem; }
+}

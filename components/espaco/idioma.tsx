@@ -7,6 +7,7 @@ type Lingua = 'pt' | 'en';
 const CHAVE = 'rr-lingua';
 
 const DICIONARIO: Record<string, { pt: string; en: string }> = {
+  inicio: { pt: 'Início', en: 'Home' },
   agregado: { pt: 'Agregado familiar', en: 'Household' },
   rendimentos: { pt: 'Rendimentos e deduções', en: 'Income and deductions' },
   documentos: { pt: 'Documentos', en: 'Documents' },

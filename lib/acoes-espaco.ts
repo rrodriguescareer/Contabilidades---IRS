@@ -260,6 +260,7 @@ export async function submeterProcesso(
   const { data, error } = await cliente.rpc('submeter_processo', { processo });
   if (error) {
     if (error.code === 'P0004') return { ok: false, erro: 'Este processo já foi submetido.' };
+    if (error.code === 'P0005') return { ok: false, erro: 'Para submeter, pague primeiro no separador Pagamento.' };
     return { ok: false, erro: error.message };
   }
 
@@ -272,5 +273,20 @@ export async function submeterProcesso(
     };
   }
   revalidatePath('/app');
+  return { ok: true };
+}
+
+/** Uma mensagem do cliente para o gabinete. Direta (sem formulário de ação),
+    para o ecrã a mostrar logo e só confirmar depois. */
+export async function enviarMensagemAoGabinete(processo: string, corpo: string): Promise<Resposta> {
+  const { erro, conta, cliente: eu } = await doProcesso(processo);
+  if (erro || !conta) return { ok: false, erro: erro || 'Sem acesso.' };
+  const texto = corpo.trim().slice(0, 4000);
+  if (!texto) return { ok: false, erro: 'Escreva a mensagem.' };
+  const cliente = await supabase();
+  const { error } = await cliente
+    .from('messages')
+    .insert({ account_id: conta, case_id: processo, body: texto, author_id: eu });
+  if (error) return { ok: false, erro: 'Não foi possível enviar. Tente outra vez.' };
   return { ok: true };
 }

@@ -4,7 +4,7 @@ import {
   guardarDeducoes, guardarImovel, guardarNota, guardarRendimento, removerRendimento,
 } from '@/lib/acoes-espaco';
 import { AMBITOS, DEDUCOES, SEPARADORES, type Separador, pertence, temIdadeParaIrsJovem } from './separadores';
-import { EnvioDocumento, type Documento } from './documentos';
+import { EnvioDocumento, ListaDocumentos, type Documento } from './documentos';
 import type { Dados } from './espaco';
 import { emRecolha } from '@/lib/fluxo';
 import e from './espaco.module.css';
@@ -41,12 +41,16 @@ export function Rendimentos({
   return (
     <>
       <div className={e.abas} role="tablist">
-        {SEPARADORES.map((s) => (
-          <button key={s.id} role="tab" className={e.aba} aria-selected={s.id === aba}
-                  onClick={() => setAba(s.id)} type="button">
-            {s.titulo}
-          </button>
-        ))}
+        {SEPARADORES.map((s) => {
+          const n = rendimentos.filter((r) => pertence(r, s)).length;
+          return (
+            <button key={s.id} role="tab" className={e.aba} aria-selected={s.id === aba}
+                    data-vazio={n === 0} onClick={() => setAba(s.id)} type="button">
+              {s.titulo}
+              {n > 0 && <span className={e.contagemAba}>{n}</span>}
+            </button>
+          );
+        })}
         <button role="tab" className={e.aba} aria-selected={aba === DEDUCOES.id}
                 onClick={() => setAba(DEDUCOES.id)} type="button">
           {DEDUCOES.titulo}
@@ -143,25 +147,12 @@ function Aba({
       <section className={e.cartao}>
         <h2>Documentos</h2>
         <p className="suave">{separador.documentos.nota}</p>
-        {(() => {
-          const meus = documentos.filter((d) => d.categoria === separador.categoria);
-          return meus.length === 0 ? (
-            <div className={e.vazio}>Ainda não enviou documentos neste separador.</div>
-          ) : (
-            meus.map((d) => (
-              <div key={d.id} className="linha-membro">
-                <div>
-                  <strong>{d.tipo}</strong>
-                  <p className="suave">{d.descricao || d.nome}</p>
-                </div>
-              </div>
-            ))
-          );
-        })()}
+        <ListaDocumentos documentos={documentos.filter((d) => d.categoria === separador.categoria)}
+                         vazio="Ainda não enviou documentos neste separador." />
         <EnvioDocumento conta={conta} processo={processo} categoria={separador.categoria}
                         tipos={separador.documentos.tipos}
                         imoveis={separador.porImovel ? meus : undefined}
-                        aberto={aberto} aoEnviar={aoMudar} />
+                        aberto={aberto} aoEnviar={aoMudar} recolhido />
       </section>
 
       <Nota processo={processo} aba={separador.categoria} inicial={nota} aberto={aberto} />
@@ -440,8 +431,10 @@ function Deducoes({
       <section className={e.cartao}>
         <h2>Documentos</h2>
         <p className="suave">{DEDUCOES.documentos.nota}</p>
+        <ListaDocumentos documentos={((dados.documentos as Documento[]) || []).filter((d) => d.categoria === 'deduction')}
+                         vazio="Ainda não enviou documentos das deduções." />
         <EnvioDocumento conta={conta} processo={processo} categoria="deduction"
-                        tipos={DEDUCOES.documentos.tipos} aberto={aberto} aoEnviar={aoMudar} />
+                        tipos={DEDUCOES.documentos.tipos} aberto={aberto} aoEnviar={aoMudar} recolhido />
       </section>
 
       <Nota processo={processo} aba="deduction" inicial={nota} aberto={aberto} />
