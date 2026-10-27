@@ -7,6 +7,7 @@ import { acceptedLegal,LEGAL_VERSION } from './legal';
 import { identity } from './auth';
 import { validEmail } from './validation';
 import {senhaComprometida,AVISO_SENHA_COMPROMETIDA} from './password-leak';
+import {erroDaPalavraPasse} from './palavra-passe';
 const text = (form: FormData, name: string) => String(form.get(name) || '').trim();
 function error(message: string, path='/entrar'): never { redirect(`${path}?erro=${encodeURIComponent(message)}`); }
 export async function signIn(form:FormData){
@@ -23,7 +24,11 @@ export async function signIn(form:FormData){
  // aplicação: '//exemplo.pt' sairia daqui para fora.
  const pedido=text(form,'destino');
  const interno=/^\/(?!\/)/.test(pedido)?pedido:'';
- const {cookies}=await import('next/headers');if((await cookies()).get('rr_invite'))redirect('/convites/aceitar');
+ const {cookies}=await import('next/headers');const frasco=await cookies();
+ // Marca a entrada para a transição de boas-vindas. Vive 30 segundos e não
+ // leva nada de pessoal: é só um sinal para o ecrã seguinte.
+ frasco.set('rr_chegada','1',{maxAge:30,path:'/',sameSite:'lax',httpOnly:false,secure:process.env.NODE_ENV==='production'});
+ if(frasco.get('rr_invite'))redirect('/convites/aceitar');
  redirect(interno||'/app');
 }
 export async function signUp(form: FormData) {
@@ -31,7 +36,8 @@ export async function signUp(form: FormData) {
   if(process.env.AUTH_EMAIL_BRANDING_READY!=='true')error('O registo está temporariamente indisponível. Contacte o contabilista.','/registar');
   if(!acceptedLegal(form))error('Tem de aceitar os Termos e Condições e a Política de Privacidade.','/registar');
   const email=text(form,'email'),password=String(form.get('password')||'');
-  if(!validEmail(email)||password.length<12||password.length>128)error('Indique um email válido e uma palavra-passe entre 12 e 128 caracteres.','/registar');
+  if(!validEmail(email))error('Indique um email válido.','/registar');
+  {const fraca=erroDaPalavraPasse(password,String(form.get('confirmation')??password));if(fraca)error(fraca,'/registar');}
   if(await senhaComprometida(password))error(AVISO_SENHA_COMPROMETIDA,'/registar');
   const origin=siteUrl();if(!origin)error('O registo está temporariamente indisponível. Contacte o profissional.','/registar');
 
@@ -48,7 +54,13 @@ export async function signUp(form: FormData) {
 
   const client=await supabase();
   const {error:failure}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${origin}/auth/callback?next=/app`,data:{terms_accepted:true,terms_version:LEGAL_VERSION,privacy_version:LEGAL_VERSION}}});
-  if (failure) error('Não foi possível concluir o registo. Verifique os dados ou tente recuperar o acesso.','/registar');
+  if (failure){
+   console.error(JSON.stringify({event:'rr_registo_falhou',codigo:failure.code,erro:failure.message}));
+   // O Supabase tem a sua própria regra de palavra-passe; se for mais exigente
+   // do que a nossa, diz-se isso em vez de um erro genérico.
+   if(failure.code==='weak_password')error('O servidor de autenticação recusou esta palavra-passe por ser fraca. Escolha outra.','/registar');
+   error('Não foi possível concluir o registo. Verifique os dados ou tente recuperar o acesso.','/registar');
+  }
   redirect('/entrar?mensagem=Confirme%20o%20email%20para%20continuar.%20Depois%20poderá%20preencher%20os%20seus%20dados%20e%20preparar%20o%20IRS.');
 }
 export async function signOut() { const client=await supabase();await client.auth.signOut();redirect('/entrar'); }
@@ -60,7 +72,7 @@ export async function recover(form: FormData) {
   redirect('/entrar?mensagem=Se%20existir%20uma%20conta%20associada,%20receberá%20instruções%20para%20recuperar%20o%20acesso.');
 }
 export async function changePassword(form: FormData) {
-  const password=String(form.get('password')||'');if(password.length<12||password.length>128)error('Use pelo menos 12 caracteres.','/nova-password');
+  const password=String(form.get('password')||'');{const fraca=erroDaPalavraPasse(password,String(form.get('confirmation')??password));if(fraca)error(fraca,'/nova-password');}
   if(await senhaComprometida(password))error(AVISO_SENHA_COMPROMETIDA,'/nova-password');
   const client=await supabase();const {data:{user}}=await client.auth.getUser();if(!user)error('Abra uma ligação de recuperação válida.');
   const {error: failure}=await client.auth.updateUser({password});if(failure)error('Não foi possível alterar a palavra-passe.','/nova-password');

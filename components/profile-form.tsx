@@ -148,7 +148,8 @@ export default function FormularioPerfil({
           className="entrada"
           autoComplete="new-password"
           maxLength={60}
-          placeholder={temSenha ? 'Guardada — escreva para substituir' : ''}
+          required={!editing && !temSenha}
+          placeholder={temSenha ? 'Guardada — escreva só para a substituir' : 'Obrigatória'}
         />
         <span className="pista" title={EXPLICACAO_SENHA} aria-label={EXPLICACAO_SENHA}>i</span>
       </label>

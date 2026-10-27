@@ -1,6 +1,7 @@
 'use client';
 import { useCallback, useEffect, useState, useTransition } from 'react';
-import { abrirPagamento } from '@/lib/stripe-checkout';
+import { abrirPagamento, desistirDoPagamento, type Abertura } from '@/lib/stripe-checkout';
+import { PagarEmbebido } from '@/components/pagar-embebido';
 import { orcamento } from '@/lib/acoes-espaco';
 import { emitirFaturaDoMeuProcesso } from '@/lib/acoes-cegid';
 import type { Dados } from './espaco';
@@ -97,25 +98,8 @@ export function Pagamento({
         </div>
       </section>
 
-      <section className={e.cartao}>
-        <h2>Pagar</h2>
-        <form id="forma-pagamento" action={abrirPagamento} className="form-membro">
-          <input type="hidden" name="account" value={conta} />
-          <input type="hidden" name="process" value={processo} />
-          <input type="hidden" name="coupon" value={cupao} />
-          <input type="hidden" name="expected_total" value={total} />
-
-          <label className="interruptor">
-            <input type="checkbox" name="confirmed" required />
-            Confirmo os dados e os documentos, aceito o valor de {euros(total)} e aceito os
-            Termos e Condições e a Política de Privacidade.
-          </label>
-
-          <button type="submit" className="btn" disabled={!conta_ || aCalcular}>
-            Pagar {euros(total)}
-          </button>
-        </form>
-      </section>
+      <Pagar conta={conta} processo={processo} cupao={cupao} total={total}
+             pronto={Boolean(conta_) && !aCalcular} aberto={checkout?.estado === 'pending'} />
 
       {teste && <Ensaio processo={processo} total={total} />}
     </>
@@ -150,12 +134,12 @@ function Ensaio({ processo, total }: { processo: string; total?: number }) {
         {total != null && (
           <button type="button" className="btn btn-secundario"
                   onClick={() => {
-                    // Submete o formulário verdadeiro, com a confirmação dada.
-                    const forma = document.getElementById('forma-pagamento') as HTMLFormElement | null;
-                    const caixa = forma?.querySelector<HTMLInputElement>('input[name="confirmed"]');
-                    if (!forma || !caixa) return;
-                    caixa.checked = true;
-                    forma.requestSubmit();
+                    // Carrega no botão verdadeiro, com a confirmação dada.
+                    const caixa = document.querySelector<HTMLInputElement>('#confirmo-pagamento');
+                    const botao = document.querySelector<HTMLButtonElement>('#botao-pagar');
+                    if (!caixa || !botao) return;
+                    if (!caixa.checked) caixa.click();
+                    window.setTimeout(() => botao.click(), 80);
                   }}>
             Abrir gateway de pagamento
           </button>
@@ -165,6 +149,79 @@ function Ensaio({ processo, total }: { processo: string; total?: number }) {
       {estado.texto && (
         <p className={estado.ok ? 'aviso-positivo' : 'aviso-critico'}>{estado.texto}</p>
       )}
+    </section>
+  );
+}
+
+/* O momento do pagamento. O formulário do Stripe monta-se aqui mesmo, dentro
+   do separador; sem chave publicável abre-se a página do Stripe. Os erros
+   ficam à vista neste cartão — antes perdiam-se num redirecionamento. */
+function Pagar({
+  conta, processo, cupao, total, pronto, aberto,
+}: {
+  conta: string; processo: string; cupao: string; total: number; pronto: boolean; aberto: boolean;
+}) {
+  const [confirmado, setConfirmado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [embebido, setEmbebido] = useState<Extract<Abertura, { modo: 'embebido' }> | null>(null);
+  const [aAbrir, abrir] = useTransition();
+
+  const pagar = () =>
+    abrir(async () => {
+      setErro(null);
+      const r = await abrirPagamento(conta, processo, cupao, total);
+      if (!r.ok) { setErro(r.erro); return; }
+      if (r.modo === 'pago') { window.location.reload(); return; }
+      if (r.modo === 'alojado') { window.location.assign(r.url); return; }
+      setEmbebido(r);
+    });
+
+  const desistir = () =>
+    abrir(async () => {
+      if (embebido) await desistirDoPagamento(embebido.tentativa);
+      setEmbebido(null);
+      window.location.reload();
+    });
+
+  if (embebido) {
+    return (
+      <section className={`${e.cartao} cartao-checkout`}>
+        <div className="linha-entre">
+          <h2>Pagamento seguro</h2>
+          <button type="button" className="btn-texto" onClick={desistir} disabled={aAbrir}>
+            Cancelar e voltar
+          </button>
+        </div>
+        <p className="suave">
+          Cartão, MB WAY, Multibanco, PayPal, Revolut Pay ou Klarna. Os dados de pagamento são
+          tratados pelo Stripe e nunca passam pela plataforma.
+        </p>
+        <PagarEmbebido chave={embebido.chave} segredo={embebido.segredo} />
+      </section>
+    );
+  }
+
+  return (
+    <section className={e.cartao}>
+      <h2>Pagar</h2>
+      {aberto && (
+        <p className="aviso-atencao">
+          Tem um pagamento iniciado. Pode continuá-lo — não é criado um segundo.
+        </p>
+      )}
+      <label className="interruptor">
+        <input id="confirmo-pagamento" type="checkbox" checked={confirmado}
+               onChange={(ev) => setConfirmado(ev.target.checked)} />
+        Confirmo os dados e os documentos, aceito o valor de {euros(total)} e aceito os
+        Termos e Condições e a Política de Privacidade.
+      </label>
+      {erro && <p className="aviso-critico">{erro}</p>}
+      <div className="acoes-membro">
+        <button id="botao-pagar" type="button" className="btn"
+                disabled={!pronto || !confirmado || aAbrir} onClick={pagar}>
+          {aAbrir ? 'A abrir o pagamento…' : aberto ? 'Continuar o pagamento' : `Pagar ${euros(total)}`}
+        </button>
+      </div>
     </section>
   );
 }

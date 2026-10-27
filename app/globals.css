@@ -653,3 +653,81 @@
   .grelha, .colunas { align-items: stretch; }
   .grelha > *, .colunas > * { min-inline-size: 0; }
 }
+
+/* A palavra-passe com os vistos a acender à medida que se escreve. */
+@layer components {
+  .palavra-passe { display: grid; gap: var(--e-2); }
+  .entrada-com-acao { position: relative; display: block; }
+  .entrada-com-acao .entrada { inline-size: 100%; padding-inline-end: 5.5rem; }
+  .ver-senha {
+    position: absolute; inset-block: 0; inset-inline-end: .35rem; margin-block: auto;
+    block-size: 2rem; padding: 0 .7rem; border: 0; border-radius: .5rem;
+    background: transparent; color: var(--acao-forte);
+    font: inherit; font-size: var(--t-xs); font-weight: 700; cursor: pointer;
+  }
+  .ver-senha:hover { background: var(--acao-suave); }
+  .regras-senha {
+    list-style: none; margin: 0; padding: 0;
+    display: grid; gap: .3rem .9rem; grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  }
+  .regras-senha li {
+    display: flex; align-items: center; gap: .5rem;
+    font-size: var(--t-sm); color: var(--texto-ténue);
+    transition: color .2s ease;
+  }
+  .regras-senha .visto {
+    flex: none; inline-size: 1.05rem; block-size: 1.05rem; border-radius: 999px;
+    border: 2px solid var(--linha-forte); background: var(--superficie);
+    display: grid; place-items: center;
+    transition: background-color .2s ease, border-color .2s ease, transform .25s cubic-bezier(.2,1.6,.4,1);
+  }
+  .regras-senha .visto::after {
+    content: ''; inline-size: .3rem; block-size: .55rem; margin-block-start: -.1rem;
+    border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(45deg) scale(0);
+    transition: transform .2s ease .05s;
+  }
+  .regras-senha li[data-ok='true'] { color: var(--positivo); font-weight: 600; }
+  .regras-senha li[data-ok='true'] .visto {
+    background: var(--positivo); border-color: var(--positivo); transform: scale(1.08);
+  }
+  .regras-senha li[data-ok='true'] .visto::after { transform: rotate(45deg) scale(1); }
+  @media (prefers-reduced-motion: reduce) {
+    .regras-senha .visto, .regras-senha .visto::after, .regras-senha li { transition: none; }
+  }
+}
+
+/* A transição depois do login: a marca entra, cumprimenta, e a cortina sobe
+   para revelar o painel que já está carregado por baixo. */
+@layer components {
+  .chegada {
+    position: fixed; inset: 0; z-index: 200;
+    display: grid; place-items: center;
+    background: radial-gradient(120% 90% at 50% 30%, #143257 0%, #0A2344 55%, #06172E 100%);
+    color: #fff;
+    animation: chegada-cortina .75s cubic-bezier(.7,0,.2,1) forwards paused;
+  }
+  .chegada[data-fase='sair'] { animation-play-state: running; }
+  .chegada-centro { display: grid; justify-items: center; gap: 1.1rem; }
+  .chegada-marca {
+    inline-size: clamp(7rem, 22vw, 10rem); block-size: auto;
+    animation: chegada-marca .7s cubic-bezier(.2,.9,.25,1.15) both;
+  }
+  .chegada-texto {
+    margin: 0; font-family: var(--fonte-titulo); font-weight: 700;
+    font-size: clamp(1.25rem, 3.4vw, 1.75rem); letter-spacing: -.01em;
+    animation: chegada-texto .55s ease-out .35s both;
+  }
+  .chegada-barra {
+    display: block; inline-size: 9rem; block-size: 3px; border-radius: 999px;
+    background: linear-gradient(90deg, #2867F8, #7FA8FF);
+    transform-origin: left center;
+    animation: chegada-barra .8s cubic-bezier(.6,0,.2,1) .3s both;
+  }
+  @keyframes chegada-marca { from { opacity: 0; transform: scale(.82) translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes chegada-texto { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes chegada-barra { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes chegada-cortina {
+    from { clip-path: inset(0 0 0 0); }
+    to { clip-path: inset(0 0 100% 0); }
+  }
+}

@@ -13,13 +13,3 @@ export function personError(name:string,birth:string,nif:string,email='',today?:
  if(email&&!validEmail(email))return 'Indique um email válido.';
  return null;
 }
-export function registrationError(fields:{name:string;birth:string;nif:string;email:string;phone:string;address:string;password:string},today?:string){
- const {name,birth,nif,email,phone,address,password}=fields;
- const person=personError(name,birth,nif,email,today);if(person)return person;
- if(!validEmail(email))return 'Indique um email válido.';
- const digits=phone.replace(/\D/g,'');
- if(phone.length>30||!/^\+?[0-9 ().-]+$/.test(phone)||digits.length<7||digits.length>15)return 'Indique um número de telemóvel válido, incluindo o indicativo se necessário.';
- if(!address.trim()||address.length>400)return 'Indique a morada, código postal e localidade, até 400 caracteres.';
- if(password.length<12||password.length>128)return 'Use uma palavra-passe entre 12 e 128 caracteres.';
- return null;
-}

@@ -3,6 +3,7 @@ import { Submeter } from '@/components/forms';
 import { EcraAutenticacao } from '@/lib/auth-view';
 import { signUp } from '@/lib/auth-actions';
 import AceitacaoLegal from '@/components/legal-acceptance';
+import { CampoPalavraPasse } from '@/components/campo-palavra-passe';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Criar conta' };
@@ -21,19 +22,8 @@ export default async function Registar({ searchParams }: { searchParams: Promise
           <span>Email</span>
           <input name="email" type="email" className="entrada" autoComplete="email" required maxLength={254} />
         </label>
-        <label className="campo">
-          <span>Palavra-passe</span>
-          <input
-            name="password"
-            type="password"
-            className="entrada"
-            autoComplete="new-password"
-            minLength={12}
-            maxLength={128}
-            required
-          />
-          <small>Entre 12 e 128 caracteres. Nunca use a senha do Portal das Finanças.</small>
-        </label>
+        <CampoPalavraPasse />
+        <p className="micro tenue">Nunca use a senha do Portal das Finanças.</p>
         <AceitacaoLegal />
         <Submeter aDecorrer="A criar…">Criar conta</Submeter>
       </form>

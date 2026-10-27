@@ -9,6 +9,7 @@ import { Rendimentos } from './rendimentos';
 import { Documentos } from './documentos';
 import { Acompanhamento } from './acompanhamento';
 import { emRecolha } from '@/lib/fluxo';
+import { Chegada } from '@/components/chegada';
 import { Pagamento } from './pagamento';
 import { Mensagens } from './mensagens';
 import e from './espaco.module.css';
@@ -31,6 +32,7 @@ type Props = {
 export function Espaco(props: Props) {
   return (
     <Idioma>
+      <Chegada nome={props.nome} />
       <Painel {...props} />
     </Idioma>
   );

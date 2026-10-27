@@ -16,6 +16,7 @@ export async function pedirVista(vista: string, processo: string) {
 /* ------------------------------------------------------------- escrita */
 import { supabase } from './supabase';
 import { encryptSecret } from './secret-crypto';
+import { randomUUID } from 'node:crypto';
 import { revalidatePath } from 'next/cache';
 
 type Resposta = { ok: boolean; erro?: string; aviso?: string };
@@ -37,7 +38,8 @@ async function doProcesso(processo: string) {
   return { erro: null, conta: (caso as { account_id: string }).account_id, cliente: context.id };
 }
 
-/** Membro do agregado. Cria ou atualiza, e liga-o ao processo. */
+/** Membro do agregado. Cria ou atualiza, e liga-o ao processo — com a senha
+    das Finanças na mesma transação. Ao criar, a senha é obrigatória. */
 export async function guardarMembro(processo: string, form: FormData): Promise<Resposta> {
   const { erro, conta } = await doProcesso(processo);
   if (erro || !conta) return { ok: false, erro: erro || 'Sem acesso.' };
@@ -45,40 +47,48 @@ export async function guardarMembro(processo: string, form: FormData): Promise<R
   const nome = texto(form, 'nome');
   const nif = texto(form, 'nif', 9);
   const nascimento = texto(form, 'nascimento', 10);
+  /* O formulário do titular manda "titular" num campo escondido; o dos outros
+     manda a escolha da lista. Havia os dois com o mesmo nome, e o browser
+     entregava o escondido — vazio — e o servidor respondia "escolha a
+     relação" mesmo com ela escolhida. */
   const relacao = texto(form, 'relacao', 20);
   const id = texto(form, 'id', 40);
+  const senha = String(form.get('senha') || '').trim();
 
   if (nome.length < 2) return { ok: false, erro: 'Indique o nome completo.' };
   if (!/^[0-9]{9}$/.test(nif)) return { ok: false, erro: 'O NIF tem nove dígitos.' };
+  if (!nascimento) return { ok: false, erro: 'Indique a data de nascimento: é dela que depende o IRS Jovem.' };
   if (!['titular', 'conjuge', 'descendente', 'ascendente', 'outro'].includes(relacao))
     return { ok: false, erro: 'Escolha a relação de parentesco.' };
+  if (!id && !senha) return { ok: false, erro: 'Indique a senha do Portal das Finanças desta pessoa.' };
+  if (senha.length > 60) return { ok: false, erro: 'A senha das Finanças tem no máximo 60 caracteres.' };
+
+  const pessoa = id || randomUUID();
+  let cifrada: string | null = null;
+  if (senha) {
+    try {
+      cifrada = encryptSecret(senha, `financas:${pessoa}`);
+    } catch (falha) {
+      console.error(JSON.stringify({ event: 'rr_cifra_falhou', erro: String(falha) }));
+      return { ok: false, erro: 'Não foi possível proteger a senha. Tente daqui a pouco.' };
+    }
+  }
 
   const cliente = await supabase();
-  if (!nascimento) return { ok: false, erro: 'Indique a data de nascimento: é dela que depende o IRS Jovem.' };
-
-  const { data, error } = await cliente.rpc('guardar_membro_agregado', {
+  const { error } = await cliente.rpc('guardar_membro_agregado', {
     processo,
     p_pessoa: id || null,
+    p_id_novo: id ? null : pessoa,
     p_nome: nome,
     p_nif: nif,
     p_nascimento: nascimento,
     p_relacao: relacao,
     p_dois_fatores: ligado(form, 'dois_fatores'),
+    p_cifrada: cifrada,
   });
-  if (error) return { ok: false, erro: error.message };
-
-  // A senha é cifrada aqui e só sai daqui cifrada.
-  const senha = String(form.get('senha') || '');
-  if (senha.trim()) {
-    const pessoa = String(data);
-    // Por função: a tabela não tem GRANT para authenticated, e o upsert
-    // directo falhava sem dizer nada.
-    const { error: falha } = await cliente.rpc('guardar_senha_financas', {
-      processo,
-      p_pessoa: pessoa,
-      p_cifrada: encryptSecret(senha.trim(), `financas:${pessoa}`),
-    });
-    if (falha) return { ok: false, erro: 'O membro ficou guardado, mas a senha não. Tente outra vez.' };
+  if (error) {
+    console.error(JSON.stringify({ event: 'rr_membro_falhou', codigo: error.code, erro: error.message }));
+    return { ok: false, erro: mensagemDaBase(error) };
   }
 
   revalidatePath('/app');
@@ -88,6 +98,15 @@ export async function guardarMembro(processo: string, form: FormData): Promise<R
       ? 'Com autenticação de dois fatores ativa, entro em contacto para validar o acesso antes de submeter a declaração.'
       : undefined,
   };
+}
+
+/* As validações da base levantam mensagens já escritas para o cliente, com o
+   código 22023 ou 23505; o resto — erros internos, em inglês — não deve
+   chegar ao ecrã cru. */
+function mensagemDaBase(error: { code?: string; message: string }) {
+  if (error.code === '22023' || error.code === '23505') return error.message;
+  if (error.code === '42501') return 'O processo não pode ser alterado neste momento.';
+  return 'Não foi possível guardar. Tente outra vez.';
 }
 
 export async function removerMembro(processo: string, pessoa: string): Promise<Resposta> {

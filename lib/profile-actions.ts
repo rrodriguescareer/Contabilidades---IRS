@@ -5,12 +5,17 @@ import {identity} from './auth';
 import {personError,validEmail} from './validation';
 import {siteUrl} from './supabase';
 import {senhaComprometida,AVISO_SENHA_COMPROMETIDA} from './password-leak';
+import {erroDaPalavraPasse} from './palavra-passe';
 const value=(form:FormData,key:string)=>String(form.get(key)||'').trim();
 function fail(message:string,path='/onboarding'):never{redirect(`${path}?erro=${encodeURIComponent(message)}`);}
 export async function saveProfile(form:FormData){
  const {client}=await identity();const path=value(form,'return')==='/perfil'?'/perfil':'/onboarding';
  const name=value(form,'name'),birth=value(form,'birth_date'),nif=value(form,'nif'),phone=value(form,'phone'),street=value(form,'street'),postal=value(form,'postal_code'),locality=value(form,'locality');
  const invalid=personError(name,birth,nif);if(invalid)fail(invalid,path);
+ // No onboarding a senha das Finanças é obrigatória: é o momento em que se pede.
+ const senhaIndicada=String(form.get('senha_financas')||'').trim();
+ if(path==='/onboarding'&&!senhaIndicada)fail('Indique a senha do Portal das Finanças.',path);
+ if(senhaIndicada.length>60)fail('A senha das Finanças tem no máximo 60 caracteres.',path);
  if(!/^\+?[0-9 ().-]{7,30}$/.test(phone)||phone.replace(/\D/g,'').length>15||phone.replace(/\D/g,'').length<7)fail('Indique um telemóvel válido.',path);
  if(!street||street.length>300||!/^\d{4}-\d{3}$/.test(postal)||!locality||locality.length>100)fail('Preencha a rua e número, o código postal (0000-000) e a localidade.',path);
  /* O NIF pode já estar noutra conta ou noutro agregado. Dizê-lo aqui, antes
@@ -42,25 +47,24 @@ export async function saveProfile(form:FormData){
   if(residencia)fail(residencia.message.includes('representante')
    ?'Fora da União Europeia é obrigatório indicar o representante fiscal e um contacto.'
    :'Indique a residência fiscal.',path);
-  // A senha vai cifrada daqui e nunca volta ao browser.
-  const senha=String(form.get('senha_financas')||'');
-  if(senha.trim()){
-   /* O identity() está em cache e foi lido antes de o perfil ser gravado:
-      nessa altura ainda não havia processo nenhum, por isso a senha nunca
-      chegava a ser escrita. Pergunta-se à base, que já sabe. */
-   const {data:processo}=await client.from('irs_cases').select('id')
-     .order('tax_year',{ascending:false}).limit(1).maybeSingle();
-   if(processo?.id){
-    const {data:pessoa}=await client.rpc('pessoa_titular',{processo:processo.id});
-    if(pessoa){
-     const {encryptSecret}=await import('./secret-crypto');
-     // A escrita passa por uma função: a tabela não tem GRANT para
-     // authenticated, e o upsert directo falhava sem dizer nada.
-     const {error:semSenha}=await client.rpc('guardar_senha_financas',{
-      processo:processo.id,p_pessoa:pessoa,p_cifrada:encryptSecret(senha.trim(),`financas:${pessoa}`),
-     });
-     if(semSenha)fail('Os dados ficaram guardados, mas a senha das Finanças não. Tente outra vez em "A minha conta".',path);
-    }
+  /* A senha das Finanças do titular. Cifrada aqui, nunca volta ao browser.
+     O titular vem do meu_titular(), que não depende das políticas de leitura
+     no mesmo pedido em que a conta acabou de nascer. */
+  const senha=String(form.get('senha_financas')||'').trim();
+  if(senha){
+   const {data:eu,error:semTitular}=await client.rpc('meu_titular');
+   const alvo=eu as {processo?:string;pessoa?:string}|null;
+   if(semTitular||!alvo?.processo||!alvo?.pessoa){
+    console.error(JSON.stringify({event:'rr_onboarding_sem_titular',erro:semTitular?.message||null}));
+    fail('Os dados ficaram guardados, mas a senha das Finanças não. Indique-a outra vez.',path);
+   }
+   let cifrada='';
+   try{const {encryptSecret}=await import('./secret-crypto');cifrada=encryptSecret(senha,`financas:${alvo.pessoa}`);}
+   catch(falha){console.error(JSON.stringify({event:'rr_cifra_falhou',erro:String(falha)}));fail('Não foi possível proteger a senha das Finanças. Tente daqui a pouco.',path);}
+   const {error:semSenha}=await client.rpc('guardar_senha_financas',{processo:alvo.processo,p_pessoa:alvo.pessoa,p_cifrada:cifrada});
+   if(semSenha){
+    console.error(JSON.stringify({event:'rr_senha_falhou',codigo:semSenha.code,erro:semSenha.message}));
+    fail('Os dados ficaram guardados, mas a senha das Finanças não. Indique-a outra vez.',path);
    }
   }
  }
@@ -90,7 +94,7 @@ export async function changeEmail(form:FormData){
 }
 export async function changeOwnPassword(form:FormData){
  const {client,user}=await identity();const current=String(form.get('current_password')||''),password=String(form.get('password')||'');
- if(password.length<12||password.length>128||password!==String(form.get('confirmation')||''))fail('Confirme a nova palavra-passe, entre 12 e 128 caracteres.','/perfil');
+ {const fraca=erroDaPalavraPasse(password,String(form.get('confirmation')||''));if(fraca)fail(fraca,'/perfil');}
  if(await senhaComprometida(password))fail(AVISO_SENHA_COMPROMETIDA,'/perfil');
  const {error:login}=await client.auth.signInWithPassword({email:user.email!,password:current});if(login)fail('A palavra-passe atual não foi confirmada.','/perfil');
  const {error}=await client.auth.updateUser({password});if(error)fail('Não foi possível alterar a palavra-passe.','/perfil');

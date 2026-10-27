@@ -4,6 +4,7 @@ import { changeEmail, changeOwnPassword } from '@/lib/profile-actions';
 import { signOut } from '@/lib/auth-actions';
 import FormularioPerfil, { type PerfilPessoal } from '@/components/profile-form';
 import { Submeter } from '@/components/forms';
+import { CampoPalavraPasse } from '@/components/campo-palavra-passe';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'A minha conta' };
@@ -69,14 +70,7 @@ export default async function Perfil({ searchParams }: { searchParams: Promise<{
               <span>Palavra-passe atual</span>
               <input name="current_password" type="password" className="entrada" autoComplete="current-password" required maxLength={128} />
             </label>
-            <label className="campo">
-              <span>Nova palavra-passe</span>
-              <input name="password" type="password" className="entrada" autoComplete="new-password" minLength={12} maxLength={128} required />
-            </label>
-            <label className="campo">
-              <span>Confirmar</span>
-              <input name="confirmation" type="password" className="entrada" autoComplete="new-password" minLength={12} maxLength={128} required />
-            </label>
+            <CampoPalavraPasse rotulo="Nova palavra-passe" />
             <Submeter className="btn btn-secundario">Guardar palavra-passe</Submeter>
           </form>
         </section>

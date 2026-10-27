@@ -181,7 +181,9 @@ function Formulario({
       }
     >
       <input type="hidden" name="id" value={membro?.id || ''} />
-      <input type="hidden" name="relacao" value={fixo ? 'titular' : ''} />
+      {/* Só o titular leva a relação escondida. Os outros escolhem-na na lista
+          — dois campos com o mesmo nome faziam o browser enviar o vazio. */}
+      {fixo && <input type="hidden" name="relacao" value="titular" />}
 
       <label>
         Nome completo
@@ -222,7 +224,9 @@ function Formulario({
           type="password"
           name="senha"
           autoComplete="new-password"
-          placeholder={membro?.tem_senha ? 'Guardada — escreva para substituir' : ''}
+          maxLength={60}
+          required={!membro?.tem_senha}
+          placeholder={membro?.tem_senha ? 'Guardada — escreva só para a substituir' : 'Obrigatória'}
         />
       </label>
 
