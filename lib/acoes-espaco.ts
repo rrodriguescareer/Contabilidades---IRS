@@ -247,47 +247,6 @@ export async function orcamento(processo: string, cupao = '') {
   return { dados: data as Record<string, unknown>, erro: null };
 }
 
-/* ------------------------------------------------------------ gabinete */
-import { gabinete } from './auth';
-
-/** Uma vista da consola. Só para quem é do gabinete. */
-export async function pedirVistaGabinete(vista: string, processo: string | null) {
-  await gabinete();
-  const { dados, erro } = await carregarEspaco(
-    ['fila', 'mensagens', 'pagamentos', 'alertas', 'processo'].includes(vista) ? vista : 'fila',
-    processo,
-    true,
-  );
-  return { dados, erro };
-}
-
-/** Fazer o processo andar. As transições válidas são decididas na base. */
-export async function avancarProcesso(
-  processo: string,
-  destino: string,
-  nota = '',
-  valor = '',
-  sentido = '',
-): Promise<Resposta> {
-  await gabinete();
-  const cliente = await supabase();
-  const cents = valor ? Math.round(Number(valor.replace(',', '.')) * 100) : null;
-  if (destino === 'filed' && (cents == null || !Number.isFinite(cents) || cents < 0)) {
-    return { ok: false, erro: 'Indique o valor apurado.' };
-  }
-  const { error } = await cliente.rpc('avancar_processo', {
-    processo,
-    destino,
-    nota: nota.slice(0, 5000),
-    valor_cents: destino === 'filed' ? cents : null,
-    sentido: destino === 'filed' ? sentido : null,
-  });
-  if (error) return { ok: false, erro: error.message };
-  revalidatePath(`/gabinete/${processo}`);
-  revalidatePath('/gabinete');
-  return { ok: true };
-}
-
 /* O cliente submete o seu processo. Era o primeiro passo do percurso e não
    existia: só o gabinete conseguia marcar um processo como submetido. Os
    pré-requisitos são verificados no servidor; aqui só se traduz a resposta. */
@@ -313,66 +272,5 @@ export async function submeterProcesso(
     };
   }
   revalidatePath('/app');
-  return { ok: true };
-}
-
-/* A mesma lista de prontidão que o cliente vê, para eu a ver antes de aprovar.
-   Vem do servidor em vez de ser recontada no browser: uma fonte só. */
-export async function prontidaoDoProcesso(processo: string) {
-  await gabinete();
-  const cliente = await supabase();
-  const { data, error } = await cliente.rpc('prontidao_do_processo', { processo });
-  if (error) return { dados: null, erro: error.message };
-  return { dados: data as unknown[], erro: null };
-}
-
-/* ------------------------------------------------------- só o gabinete */
-
-/** A senha das Finanças de uma pessoa, para eu entrar no Portal. A consulta
-    fica registada na base antes de a senha sair de lá — é esse registo que o
-    cliente vê no Acompanhamento. */
-export async function verSenhaFinancas(pessoa: string) {
-  await gabinete();
-  if (!/^[0-9a-f-]{36}$/i.test(pessoa)) return { ok: false as const, erro: 'Pessoa inválida.' };
-  const cliente = await supabase();
-  const { data, error } = await cliente.rpc('consultar_senha_financas', { p_pessoa: pessoa });
-  if (error || typeof data !== 'string') {
-    return { ok: false as const, erro: error?.code === '22023' ? error.message : 'Não foi possível consultar a senha.' };
-  }
-  try {
-    const { decryptSecret } = await import('./secret-crypto');
-    return { ok: true as const, senha: decryptSecret(data, `financas:${pessoa}`) };
-  } catch {
-    return { ok: false as const, erro: 'A senha guardada não pôde ser decifrada. Peça-a outra vez ao cliente.' };
-  }
-}
-
-/** Descarregar um documento do cliente. A descarga fica registada (o cliente
-    vê a data e a hora) e o endereço assinado vale um minuto. */
-export async function descarregarDocumento(documento: string) {
-  await gabinete();
-  if (!/^[0-9a-f-]{36}$/i.test(documento)) return { ok: false as const, erro: 'Documento inválido.' };
-  const cliente = await supabase();
-  const { data: caminho, error } = await cliente.rpc('registar_descarga', { documento });
-  if (error || typeof caminho !== 'string') {
-    return { ok: false as const, erro: error?.code === '22023' ? error.message : 'Documento indisponível.' };
-  }
-  const { data: assinado, error: semUrl } = await cliente.storage
-    .from('irs-documents')
-    .createSignedUrl(caminho, 60, { download: true });
-  if (semUrl || !assinado) return { ok: false as const, erro: 'Não foi possível abrir o documento.' };
-  return { ok: true as const, url: assinado.signedUrl };
-}
-
-/** Dar um alerta como resolvido, a partir da consola. */
-export async function resolverAlertaDoGabinete(alerta: string) {
-  await gabinete();
-  if (!/^[0-9a-f-]{36}$/i.test(alerta)) return { ok: false, erro: 'Alerta inválido.' };
-  const cliente = await supabase();
-  const { error } = await cliente
-    .from('task_alerts')
-    .update({ resolved_at: new Date().toISOString() })
-    .eq('id', alerta);
-  if (error) return { ok: false, erro: 'Não foi possível resolver.' };
   return { ok: true };
 }

@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { identity } from '@/lib/auth';
+import { gabineteNaGestao, identity } from '@/lib/auth';
 import { EcraAutenticacao } from '@/lib/auth-view';
 import FormularioPerfil, { type PerfilPessoal } from '@/components/profile-form';
 import { ResolverNif } from '@/components/resolver-nif';
@@ -11,7 +11,7 @@ export default async function Onboarding({ searchParams }: { searchParams: Promi
   const { context } = await identity();
   const { erro, conflito } = await searchParams;
 
-  if (context.is_staff) redirect('/gabinete');
+  if (context.is_staff) redirect(gabineteNaGestao());
   if (!context.legal_accepted) redirect('/aceitar-termos');
   if (context.profile.onboarding_completed_at) redirect('/app');
 

@@ -6,6 +6,13 @@ import { portalContext } from './portal-context';
 
 const erro = (mensagem: string) => `/entrar?erro=${encodeURIComponent(mensagem)}`;
 
+/** O gabinete do contabilista vive na gestão. Sem o endereço configurado,
+    não há para onde o mandar — e diz-se isso em vez de o deixar num ecrã vazio. */
+export function gabineteNaGestao(caminho = '/irs') {
+  const base = (process.env.NEXT_PUBLIC_GESTAO_URL || '').replace(/\/$/, '');
+  return /^https:\/\//.test(base) ? `${base}${caminho}` : erro('O gabinete está na plataforma de gestão.');
+}
+
 /** Quem está autenticado, sem decidir para onde vai. */
 export const identity = cache(async function identity() {
   if (!configuration()) redirect('/entrar');
@@ -29,15 +36,8 @@ export const identity = cache(async function identity() {
 /** Área do cliente. O contabilista tem um espaço próprio e é levado para lá. */
 export const session = cache(async function session() {
   const atual = await identity();
-  if (atual.context.is_staff) redirect('/gabinete');
+  if (atual.context.is_staff) redirect(gabineteNaGestao());
   if (!atual.context.legal_accepted) redirect('/aceitar-termos');
   if (!atual.context.profile.onboarding_completed_at) redirect('/onboarding');
-  return atual;
-});
-
-/** Área do contabilista. */
-export const gabinete = cache(async function gabinete() {
-  const atual = await identity();
-  if (!atual.context.is_staff) redirect('/app');
   return atual;
 });

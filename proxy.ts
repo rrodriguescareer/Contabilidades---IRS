@@ -38,4 +38,4 @@ export async function proxy(request: NextRequest) {
   response.headers.set('Cache-Control','private, no-store');
   return response;
 }
-export const config = { matcher: ['/app/:path*','/gabinete/:path*','/api/espaco','/nova-password','/onboarding','/perfil','/pagamento','/convites/:path*','/aceitar-termos'] };
+export const config = { matcher: ['/app/:path*','/nova-password','/onboarding','/perfil','/pagamento','/convites/:path*','/aceitar-termos'] };

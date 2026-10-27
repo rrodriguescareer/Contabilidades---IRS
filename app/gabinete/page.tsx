@@ -1,41 +1,18 @@
-import { gabinete } from '@/lib/auth';
-import { carregarEspaco } from '@/lib/espaco';
-import { Consola } from '@/components/gabinete/consola';
-import { origemDasCredenciais, temCredenciais } from '@/lib/cegid';
-import { uuid } from '@/lib/data';
+import { redirect } from 'next/navigation';
+import { gabineteNaGestao } from '@/lib/auth';
 
-export const metadata = { title: 'Gabinete' };
 export const dynamic = 'force-dynamic';
 
 type Props = { searchParams: Promise<Record<string, string | string[] | undefined>> };
 
-const VISTAS = ['fila', 'mensagens', 'pagamentos', 'alertas', 'integracoes'];
-
-/** A consola do contabilista: a fila de trabalho e tudo o que a serve. */
+/* O gabinete mudou-se para a plataforma de gestão. As ligações antigas
+   continuam a servir: levam ao mesmo sítio, com o mesmo processo e separador. */
 export default async function Gabinete({ searchParams }: Props) {
-  const { context } = await gabinete();
   const procura = await searchParams;
-  const pedida = typeof procura.separador === 'string' ? procura.separador : '';
-  const vista = VISTAS.includes(pedida) ? pedida : 'fila';
-  const { dados } = await carregarEspaco(vista === 'integracoes' ? 'fila' : vista, null, true);
-
-  // Um processo no endereço abre logo, para as ligações continuarem a servir.
-  const pedido = typeof procura.processo === 'string' ? procura.processo : '';
-  const { dados: aberto } = uuid(pedido)
-    ? await carregarEspaco('processo', pedido, true)
-    : { dados: null };
-
-  return (
-    <Consola
-      vistaInicial={vista}
-      dadosIniciais={dados ?? { vista }}
-      processoInicial={uuid(pedido) && aberto
-        ? { id: pedido, dados: aberto, aba: typeof procura.aba === 'string' ? procura.aba : undefined }
-        : null}
-      nome={context.profile.full_name || null}
-      gestao={process.env.NEXT_PUBLIC_GESTAO_URL || null}
-      cegidConfigurado={await temCredenciais()}
-      cegidOrigem={await origemDasCredenciais()}
-    />
-  );
+  const q = new URLSearchParams();
+  for (const k of ['processo', 'aba', 'separador']) {
+    const v = procura[k];
+    if (typeof v === 'string' && /^[a-z0-9-]{1,40}$/i.test(v)) q.set(k, v);
+  }
+  redirect(gabineteNaGestao(`/irs${q.size ? `?${q}` : ''}`));
 }
