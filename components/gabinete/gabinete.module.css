@@ -40,6 +40,16 @@
 }
 
 .menu { display: grid; gap: 2px; }
+.grupo {
+  margin: var(--e-2) 0 .2rem;
+  padding-inline: .8rem;
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--texto-ténue);
+}
+a.item { text-decoration: none; }
 .item {
   display: flex;
   align-items: center;

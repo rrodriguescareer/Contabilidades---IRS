@@ -26,6 +26,13 @@ const VISTAS = [
   { id: 'integracoes', rotulo: 'Integrações', icone: 'ficha' },
 ] as const;
 
+const GESTAO = [
+  { href: '/utilizadores', rotulo: 'Clientes e acessos', icone: 'pessoas' },
+  { href: '/precos', rotulo: 'Preços e campanhas', icone: 'etiqueta' },
+  { href: '/descontos', rotulo: 'Códigos de desconto', icone: 'percentagem' },
+  { href: '/avisos', rotulo: 'Avisos', icone: 'megafone' },
+];
+
 const FILTROS = [
   { id: 'todos', rotulo: 'Todos' },
   { id: 'meus', rotulo: 'À minha espera' },
@@ -123,12 +130,21 @@ export function Consola({ vistaInicial, dadosIniciais, cegidConfigurado, cegidOr
           ))}
         </nav>
 
+        {/* A outra metade da ótica do contabilista vive na gestão. Fica aqui
+            no mesmo menu, com o mesmo desenho, para ser um sítio só. */}
+        {gestao && (
+          <nav className={e.menu} aria-label="Gestão">
+            <p className={e.grupo}>Gestão</p>
+            {GESTAO.map((g) => (
+              <a key={g.href} className={e.item} href={`${gestao.replace(/\/$/, '')}${g.href}`}>
+                <Icone nome={g.icone} />
+                <span>{g.rotulo}</span>
+              </a>
+            ))}
+          </nav>
+        )}
+
         <div className={e.rodape}>
-          {gestao && (
-            <a className={e.ligacaoLateral} href={gestao} target="_blank" rel="noopener">
-              Gestão de clientes ↗
-            </a>
-          )}
           <div className={e.eu}>
             <span className={e.avatar}>{iniciais(nome || 'Rúben Rodrigues')}</span>
             <div>
@@ -419,6 +435,10 @@ function Icone({ nome }: { nome: string }) {
     case 'balao': return <svg {...comum}><path d="M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" /></svg>;
     case 'cartao': return <svg {...comum}><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 10h18" /></svg>;
     case 'sino': return <svg {...comum}><path d="M6 8a6 6 0 1 1 12 0c0 7 3 8 3 8H3s3-1 3-8" /><path d="M10 20a2 2 0 0 0 4 0" /></svg>;
+    case 'pessoas': return <svg {...comum}><circle cx="9" cy="8" r="3.5" /><path d="M2.5 20a6.5 6.5 0 0 1 13 0" /><path d="M16 4.5a3.5 3.5 0 0 1 0 7M18 14a6 6 0 0 1 3.5 6" /></svg>;
+    case 'etiqueta': return <svg {...comum}><path d="M3 12V4a1 1 0 0 1 1-1h8l9 9-9 9z" /><circle cx="7.5" cy="7.5" r="1.5" /></svg>;
+    case 'percentagem': return <svg {...comum}><path d="M19 5 5 19" /><circle cx="7" cy="7" r="2.5" /><circle cx="17" cy="17" r="2.5" /></svg>;
+    case 'megafone': return <svg {...comum}><path d="M3 11v2a1 1 0 0 0 1 1h2l5 4V6L6 10H4a1 1 0 0 0-1 1zM15 9a3 3 0 0 1 0 6M18 6a7 7 0 0 1 0 12" /></svg>;
     default: return <svg {...comum}><path d="M4 6h16M4 12h16M4 18h10" /></svg>;
   }
 }
