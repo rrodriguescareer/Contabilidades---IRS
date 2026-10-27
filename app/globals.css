@@ -731,3 +731,7 @@
     to { clip-path: inset(0 0 100% 0); }
   }
 }
+
+@layer components {
+  .btn-pequeno { padding: .38rem .8rem; font-size: var(--t-sm); }
+}

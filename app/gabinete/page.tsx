@@ -13,7 +13,7 @@ const VISTAS = ['fila', 'mensagens', 'pagamentos', 'alertas', 'integracoes'];
 
 /** A consola do contabilista: a fila de trabalho e tudo o que a serve. */
 export default async function Gabinete({ searchParams }: Props) {
-  await gabinete();
+  const { context } = await gabinete();
   const procura = await searchParams;
   const pedida = typeof procura.separador === 'string' ? procura.separador : '';
   const vista = VISTAS.includes(pedida) ? pedida : 'fila';
@@ -29,7 +29,11 @@ export default async function Gabinete({ searchParams }: Props) {
     <Consola
       vistaInicial={vista}
       dadosIniciais={dados ?? { vista }}
-      processoInicial={uuid(pedido) && aberto ? { id: pedido, dados: aberto } : null}
+      processoInicial={uuid(pedido) && aberto
+        ? { id: pedido, dados: aberto, aba: typeof procura.aba === 'string' ? procura.aba : undefined }
+        : null}
+      nome={context.profile.full_name || null}
+      gestao={process.env.NEXT_PUBLIC_GESTAO_URL || null}
       cegidConfigurado={await temCredenciais()}
       cegidOrigem={await origemDasCredenciais()}
     />

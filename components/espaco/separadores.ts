@@ -167,6 +167,18 @@ export const DEDUCOES = {
 
 export const separadorDe = (id: string) => SEPARADORES.find((s) => s.id === id);
 
+/* As mais-valias de ações e o separador dos capitais partilham a mesma
+   categoria na base de dados. Distinguem-se por terem, ou não, data de venda.
+   As duas óticas usam isto, para mostrarem cada linha no mesmo separador. */
+export const pertence = (
+  r: { categoria: string; venda_em: string | null },
+  s: Pick<Separador, 'id' | 'categoria'>,
+) => {
+  if (s.id === 'capital') return r.categoria === 'securities' && !r.venda_em;
+  if (s.id === 'securities_sale') return r.categoria === 'securities' && !!r.venda_em;
+  return r.categoria === s.categoria;
+};
+
 /** O IRS Jovem só se pergunta a quem tem idade para ele. */
 export function temIdadeParaIrsJovem(nascimento: string | null | undefined, ano = 2026) {
   if (!nascimento) return false;

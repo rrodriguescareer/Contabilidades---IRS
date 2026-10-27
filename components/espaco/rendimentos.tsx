@@ -3,7 +3,7 @@ import { useMemo, useState, useTransition } from 'react';
 import {
   guardarDeducoes, guardarImovel, guardarNota, guardarRendimento, removerRendimento,
 } from '@/lib/acoes-espaco';
-import { AMBITOS, DEDUCOES, SEPARADORES, type Separador, temIdadeParaIrsJovem } from './separadores';
+import { AMBITOS, DEDUCOES, SEPARADORES, type Separador, pertence, temIdadeParaIrsJovem } from './separadores';
 import { EnvioDocumento, type Documento } from './documentos';
 import type { Dados } from './espaco';
 import { emRecolha } from '@/lib/fluxo';
@@ -23,13 +23,6 @@ type Rendimento = {
 const euros = (c: number | null) =>
   c == null ? '—' : (c / 100).toLocaleString('pt-PT', { style: 'currency', currency: 'EUR' });
 
-/* As mais-valias de ações e o separador dos capitais partilham a mesma
-   categoria na base de dados. Distinguem-se por terem, ou não, data de venda. */
-const pertence = (r: Rendimento, s: Separador) => {
-  if (s.id === 'capital') return r.categoria === 'securities' && !r.venda_em;
-  if (s.id === 'securities_sale') return r.categoria === 'securities' && !!r.venda_em;
-  return r.categoria === s.categoria;
-};
 
 export function Rendimentos({
   dados, conta, processo, estado, aoMudar,
