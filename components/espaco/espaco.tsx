@@ -8,6 +8,7 @@ import { Agregado } from './agregado';
 import { Rendimentos } from './rendimentos';
 import { Documentos } from './documentos';
 import { Acompanhamento } from './acompanhamento';
+import { emRecolha } from '@/lib/fluxo';
 import { Pagamento } from './pagamento';
 import { Mensagens } from './mensagens';
 import e from './espaco.module.css';
@@ -145,9 +146,9 @@ function Painel({ conta, processo, nome, estado, vistaInicial, dadosIniciais, te
           )}
           {vista === 'documentos' && (
             <Documentos dados={dados} conta={conta} processo={processo}
-                        aberto={estado === 'collecting'} aoMudar={recarregar} />
+                        aberto={emRecolha(estado)} aoMudar={recarregar} />
           )}
-          {vista === 'progresso' && <Acompanhamento dados={dados} />}
+          {vista === 'progresso' && <Acompanhamento dados={dados} processo={processo} />}
           {vista === 'pagamento' && (
             <Pagamento dados={dados} conta={conta} processo={processo} teste={teste} />
           )}

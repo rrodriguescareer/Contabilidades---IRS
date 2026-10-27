@@ -1,16 +1,6 @@
-/* Os rótulos dos estados, num sítio só — estavam na consola e a vista do
-   processo mostrava o valor em cru. */
-export const ESTADOS: Record<string, string> = {
-  collecting: 'Em recolha',
-  submitted_by_client: 'Submetido',
-  accepted: 'Aceite',
-  validation: 'Em validação',
-  approved: 'Aprovado',
-  submitting: 'Em submissão',
-  filed: 'Submetido na AT',
-  monitoring: 'Acompanhamento',
-  closed: 'Fechado',
-};
+/* Os rótulos vivem no lib/fluxo, que é o fluxo todo num sítio só. Isto é só a
+   porta de entrada para a consola, mais os rótulos que são dela. */
+export { ROTULOS as ESTADOS, MEUS } from '@/lib/fluxo';
 
 export const PAGAMENTOS: Record<string, string> = {
   paid: 'Pago',
@@ -19,9 +9,6 @@ export const PAGAMENTOS: Record<string, string> = {
   failed: 'Falhou',
   cancelled: 'Cancelado',
 };
-
-/** Estes esperam por mim; o resto espera pelo cliente ou pela AT. */
-export const MEUS = ['submitted_by_client', 'accepted', 'validation', 'approved', 'submitting'];
 
 /* Os alertas chegavam à fila com o nome técnico. Quem olha para a consola
    precisa de saber o que fazer, não como a coluna se chama. */

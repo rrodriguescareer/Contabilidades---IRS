@@ -1,51 +1,48 @@
 'use client';
 import { useRouter } from 'next/navigation';
-import { useState, useTransition } from 'react';
-import { avancarProcesso } from '@/lib/acoes-espaco';
+import { useEffect, useState, useTransition } from 'react';
+import { avancarProcesso, prontidaoDoProcesso } from '@/lib/acoes-espaco';
+import { FASES, LINHA, PASSOS, QUEM, estadoDe, posicao, type Prontidao } from '@/lib/fluxo';
 import e from './gabinete.module.css';
 
-/* O que se pode fazer a partir de cada estado, e com que palavras.
-   A base de dados decide o que é válido; isto é só a forma de o pedir. */
-const PASSOS: Record<string, { destino: string; rotulo: string; recuo?: boolean }[]> = {
-  collecting: [{ destino: 'submitted_by_client', rotulo: 'Marcar como submetido' }],
-  submitted_by_client: [
-    { destino: 'accepted', rotulo: 'Aceitar processo' },
-    { destino: 'collecting', rotulo: 'Devolver ao cliente', recuo: true },
-  ],
-  accepted: [
-    { destino: 'validation', rotulo: 'Começar validação' },
-    { destino: 'collecting', rotulo: 'Devolver ao cliente', recuo: true },
-  ],
-  validation: [
-    { destino: 'approved', rotulo: 'Aprovar' },
-    { destino: 'collecting', rotulo: 'Devolver ao cliente', recuo: true },
-  ],
-  approved: [
-    { destino: 'submitting', rotulo: 'Iniciar submissão' },
-    { destino: 'validation', rotulo: 'Voltar à validação', recuo: true },
-  ],
-  submitting: [
-    { destino: 'filed', rotulo: 'Registar entrega' },
-    { destino: 'approved', rotulo: 'Voltar a aprovado', recuo: true },
-  ],
-  filed: [{ destino: 'monitoring', rotulo: 'Pôr em acompanhamento' }],
-  monitoring: [
-    { destino: 'closed', rotulo: 'Fechar processo' },
-    { destino: 'filed', rotulo: 'Voltar a submetido', recuo: true },
-  ],
-  closed: [{ destino: 'monitoring', rotulo: 'Reabrir acompanhamento', recuo: true }],
-};
-
-export function Avanco({ processo, estado }: { processo: string; estado: string }) {
+/* Isto era uma caixa com botões e nada mais: não se via onde o processo estava
+   nem o que faltava para o deixar seguir. Agora tem três partes — a régua das
+   fases, a prontidão (a mesma lista que o cliente vê) e as ações, com o passo
+   seguinte em destaque e os desvios e recuos à parte. */
+export function Avanco({
+  processo, estado, aoMudar, prontidaoInicial,
+}: {
+  processo: string; estado: string; aoMudar?: () => void;
+  /* Quem já tem a lista passa-a e poupa a ida ao servidor. */
+  prontidaoInicial?: Prontidao[];
+}) {
   const router = useRouter();
   const [erro, setErro] = useState<string | null>(null);
   const [nota, setNota] = useState('');
   const [valor, setValor] = useState('');
   const [sentido, setSentido] = useState('refund');
+  const [prontidao, setProntidao] = useState<Prontidao[]>(prontidaoInicial || []);
   const [aCorrer, comecar] = useTransition();
 
+  useEffect(() => {
+    if (prontidaoInicial) return;
+    let vivo = true;
+    prontidaoDoProcesso(processo)
+      .then(({ dados }) => {
+        if (vivo && Array.isArray(dados)) setProntidao(dados as Prontidao[]);
+      })
+      /* A prontidão é informação a mais: se falhar, o fluxo continua a servir. */
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, [processo, estado, prontidaoInicial]);
+
+  const actual = estadoDe(estado);
+  const { indice, fase } = posicao(estado);
   const passos = PASSOS[estado] || [];
-  if (passos.length === 0) return null;
+  const faseActual = FASES.findIndex((f) => f.id === fase);
+  const avanco = passos.filter((p) => p.tom === 'avancar');
+  const outros = passos.filter((p) => p.tom !== 'avancar');
+  const pendentes = prontidao.filter((p) => p.estado !== 'ok');
 
   const pedir = (destino: string) =>
     comecar(async () => {
@@ -53,48 +50,108 @@ export function Avanco({ processo, estado }: { processo: string; estado: string 
       const r = await avancarProcesso(processo, destino, nota, valor, sentido);
       if (!r.ok) { setErro(r.erro || 'Não foi possível avançar.'); return; }
       setNota(''); setValor('');
+      aoMudar?.();
       router.refresh();
     });
 
   return (
     <section className={e.bloco}>
-      <h2>Avançar o processo</h2>
+      <div className="linha-entre">
+        <h2>Fluxo do processo</h2>
+        <span className="selo-espera" data-espera={actual?.espera}>
+          {QUEM[actual?.espera || 'gabinete']}
+        </span>
+      </div>
 
-      {/* Só se pede o valor onde ele existe: na entrega. */}
-      {estado === 'submitting' && (
-        <div className={e.colunas}>
-          <label className="campo">
-            <span className="rotulo">Valor apurado</span>
-            <input className="entrada" value={valor} onChange={(ev) => setValor(ev.target.value)}
-                   inputMode="decimal" placeholder="0,00" />
-          </label>
-          <label className="campo">
-            <span className="rotulo">Sentido</span>
-            <select className="entrada" value={sentido} onChange={(ev) => setSentido(ev.target.value)}>
-              <option value="refund">A reembolsar</option>
-              <option value="payment">A pagar</option>
-            </select>
-          </label>
-        </div>
+      {/* A régua: as quatro fases e, por baixo, os passos da linha principal. */}
+      <ol className="fases fases-compactas">
+        {FASES.map((f, j) => (
+          <li key={f.id} data-estado={j < faseActual ? 'feito' : j === faseActual ? 'atual' : 'por-vir'}>
+            <strong>{f.titulo}</strong>
+            <span>
+              {LINHA.filter((x) => x.fase === f.id)
+                .map((x) => x.curto)
+                .join(' · ')}
+            </span>
+          </li>
+        ))}
+      </ol>
+      <p className="regua-passo">
+        Passo {indice + 1} de {LINHA.length} · <strong>{actual?.titulo || estado}</strong>
+        {actual?.desvio ? ' (desvio)' : ''}
+      </p>
+
+      {/* A prontidão. Só o que não está pronto: o resto é ruído a conferir. */}
+      {pendentes.length > 0 && (
+        <ul className="prontidao prontidao-compacta">
+          {pendentes.map((p) => (
+            <li key={p.chave} data-estado={p.estado}>
+              <span className="marca-pronto" aria-hidden="true" />
+              <div>
+                <strong>{p.rotulo}</strong>
+                <p className="suave">{p.detalhe}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+      {prontidao.length > 0 && pendentes.length === 0 && (
+        <p className="aviso-positivo">Prontidão completa: dados, senha, rendimentos e pagamento.</p>
       )}
 
-      <label className="campo">
-        <span className="rotulo">Nota para o cliente (opcional)</span>
-        <textarea className="entrada" rows={2} value={nota}
-                  onChange={(ev) => setNota(ev.target.value)} maxLength={5000}
-                  placeholder="Sem nota, o cliente recebe uma explicação do passo." />
-      </label>
+      {passos.length === 0 ? (
+        <p className="suave">Não há mais passos a partir deste estado.</p>
+      ) : (
+        <>
+          {/* Só se pede o valor onde ele existe: na entrega. */}
+          {estado === 'submitting' && (
+            <div className="grelha-campos">
+              <label className="campo">
+                <span className="rotulo">Valor apurado</span>
+                <input className="entrada" value={valor} onChange={(ev) => setValor(ev.target.value)}
+                       inputMode="decimal" placeholder="0,00" />
+              </label>
+              <label className="campo">
+                <span className="rotulo">Sentido</span>
+                <select className="entrada" value={sentido} onChange={(ev) => setSentido(ev.target.value)}>
+                  <option value="refund">A reembolsar</option>
+                  <option value="payment">A pagar</option>
+                </select>
+              </label>
+            </div>
+          )}
 
-      {erro && <p className="aviso-critico">{erro}</p>}
+          <label className="campo">
+            <span className="rotulo">Nota para o cliente (opcional)</span>
+            <textarea className="entrada" rows={2} value={nota}
+                      onChange={(ev) => setNota(ev.target.value)} maxLength={5000}
+                      placeholder="Sem nota, o cliente recebe a explicação padrão do passo." />
+          </label>
 
-      <div className="acoes-membro">
-        {passos.map((p) => (
-          <button key={p.destino} type="button" className={p.recuo ? 'btn btn-secundario' : 'btn'}
-                  disabled={aCorrer} onClick={() => pedir(p.destino)}>
-            {aCorrer ? 'A guardar…' : p.rotulo}
-          </button>
-        ))}
-      </div>
+          {erro && <p className="aviso-critico">{erro}</p>}
+
+          <div className="acoes-fluxo">
+            {avanco.map((p, i) => (
+              <button key={p.destino} type="button"
+                      className={i === 0 ? 'btn' : 'btn btn-secundario'}
+                      disabled={aCorrer} onClick={() => pedir(p.destino)}>
+                {aCorrer ? 'A guardar…' : p.rotulo}
+              </button>
+            ))}
+            {outros.length > 0 && (
+              <span className="acoes-outras">
+                {outros.map((p) => (
+                  <button key={p.destino} type="button"
+                          className={p.tom === 'desvio' ? 'btn-texto btn-desvio' : 'btn-texto'}
+                          disabled={aCorrer} onClick={() => pedir(p.destino)}>
+                    {p.rotulo}
+                  </button>
+                ))}
+              </span>
+            )}
+          </div>
+        </>
+      )}
     </section>
   );
 }

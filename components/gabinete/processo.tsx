@@ -71,7 +71,7 @@ export function Processo({
           )}
         </div>
 
-        <Avanco processo={processo} estado={String(cab.estado || '')} />
+        <Avanco processo={processo} estado={String(cab.estado || '')} aoMudar={aoMudar} />
 
         <TestesCegid processo={processo} />
 

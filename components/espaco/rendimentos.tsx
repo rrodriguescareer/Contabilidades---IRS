@@ -6,6 +6,7 @@ import {
 import { AMBITOS, DEDUCOES, SEPARADORES, type Separador, temIdadeParaIrsJovem } from './separadores';
 import { EnvioDocumento, type Documento } from './documentos';
 import type { Dados } from './espaco';
+import { emRecolha } from '@/lib/fluxo';
 import e from './espaco.module.css';
 
 type Membro = { id: string; nome: string; nascimento: string | null; relacao: string };
@@ -40,7 +41,7 @@ export function Rendimentos({
   const imoveis = (dados.imoveis as Imovel[]) || [];
   const rendimentos = (dados.rendimentos as Rendimento[]) || [];
   const notas = (dados.notas as Record<string, string>) || {};
-  const aberto = estado === 'collecting';
+  const aberto = emRecolha(estado);
 
   const separador = useMemo(() => SEPARADORES.find((s) => s.id === aba), [aba]);
 

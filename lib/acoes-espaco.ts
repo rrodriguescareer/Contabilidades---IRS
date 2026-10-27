@@ -268,3 +268,41 @@ export async function avancarProcesso(
   revalidatePath('/gabinete');
   return { ok: true };
 }
+
+/* O cliente submete o seu processo. Era o primeiro passo do percurso e não
+   existia: só o gabinete conseguia marcar um processo como submetido. Os
+   pré-requisitos são verificados no servidor; aqui só se traduz a resposta. */
+export async function submeterProcesso(
+  processo: string,
+): Promise<Resposta & { faltas?: string[] }> {
+  const { erro } = await doProcesso(processo);
+  if (erro) return { ok: false, erro };
+
+  const cliente = await supabase();
+  const { data, error } = await cliente.rpc('submeter_processo', { processo });
+  if (error) {
+    if (error.code === 'P0004') return { ok: false, erro: 'Este processo já foi submetido.' };
+    return { ok: false, erro: error.message };
+  }
+
+  const r = (data || {}) as { ok?: boolean; faltas?: string[] };
+  if (!r.ok) {
+    return {
+      ok: false,
+      erro: 'Falta completar o processo antes de o submeter.',
+      faltas: r.faltas || [],
+    };
+  }
+  revalidatePath('/app');
+  return { ok: true };
+}
+
+/* A mesma lista de prontidão que o cliente vê, para eu a ver antes de aprovar.
+   Vem do servidor em vez de ser recontada no browser: uma fonte só. */
+export async function prontidaoDoProcesso(processo: string) {
+  await gabinete();
+  const cliente = await supabase();
+  const { data, error } = await cliente.rpc('prontidao_do_processo', { processo });
+  if (error) return { dados: null, erro: error.message };
+  return { dados: data as unknown[], erro: null };
+}

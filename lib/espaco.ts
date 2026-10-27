@@ -32,6 +32,15 @@ export function vistaValida(valor: unknown, gabinete = false): string {
 
 export async function carregarEspaco(vista: string, processo: string | null, gabinete = false) {
   const cliente = await supabase();
+
+  /* O acompanhamento tem a sua função: precisa da prontidão, das contagens e
+     do pagamento, que o espaco_irs não traz — e aquela já serve sete vistas. */
+  if (!gabinete && vista === 'progresso') {
+    const { data, error } = await cliente.rpc('espaco_progresso', { processo });
+    if (error) return { dados: null, erro: error.message };
+    return { dados: { ...(data || {}), vista, processo } as Espaco, erro: null };
+  }
+
   const { data, error } = await cliente.rpc(gabinete ? 'espaco_gabinete' : 'espaco_irs', {
     vista,
     processo,
