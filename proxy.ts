@@ -1,7 +1,27 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { configuration } from './lib/public-config';
+/* O gabinete mudou-se para a gestão. As ligações antigas seguem para lá com
+   um 307 imediato, antes de qualquer página começar a ser enviada. */
+function gabineteMudou(request: NextRequest) {
+  const { pathname, searchParams } = request.nextUrl;
+  if (!pathname.startsWith('/gabinete')) return null;
+  const base = (process.env.NEXT_PUBLIC_GESTAO_URL || '').replace(/\/$/, '');
+  if (!/^https:\/\//.test(base)) return null;
+  const partes = pathname.split('/').filter(Boolean); // ['gabinete', id?, 'relatorio'?]
+  const id = /^[0-9a-f-]{36}$/i.test(partes[1] || '') ? partes[1] : '';
+  const destino = new URL(id && partes[2] === 'relatorio' ? `${base}/relatorio/${id}` : `${base}/irs`);
+  if (id && partes[2] !== 'relatorio') destino.searchParams.set('processo', id);
+  for (const k of ['processo', 'aba', 'separador']) {
+    const v = searchParams.get(k);
+    if (v && /^[a-z0-9-]{1,40}$/i.test(v)) destino.searchParams.set(k, v);
+  }
+  return NextResponse.redirect(destino, 307);
+}
+
 export async function proxy(request: NextRequest) {
+  const mudou = gabineteMudou(request);
+  if (mudou) return mudou;
   const config=configuration();
   let response = NextResponse.next({ request });
   if (!config) return response;
@@ -38,4 +58,4 @@ export async function proxy(request: NextRequest) {
   response.headers.set('Cache-Control','private, no-store');
   return response;
 }
-export const config = { matcher: ['/app/:path*','/nova-password','/onboarding','/perfil','/pagamento','/convites/:path*','/aceitar-termos'] };
+export const config = { matcher: ['/app/:path*','/gabinete/:path*','/gabinete','/nova-password','/onboarding','/perfil','/pagamento','/convites/:path*','/aceitar-termos'] };
