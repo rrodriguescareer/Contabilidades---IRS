@@ -41,13 +41,20 @@ export function ListaDocumentos({ documentos, vazio }: { documentos: Documento[]
               <strong>{d.descricao || d.nome}</strong>
               <span>{d.tipo}{d.imovel ? ` · ${d.imovel}` : ''} · {tamanho(d.tamanho)} · enviado a {data(d.em)}</span>
             </div>
-            {/* Nos separadores de rendimentos as descargas não vêm: não se inventa um estado. */}
-            {d.descargas !== undefined && (
-              <span className={e.estadoDocumento} data-aberto={aberto}
-                    title={aberto ? d.descargas.map(dataHora).join('\n') : undefined}>
-                {aberto ? `Aberto por mim a ${dataHora(d.descargas[0])}` : 'Ainda não aberto'}
-              </span>
-            )}
+            <div className={e.ladoDocumento}>
+              {/* Nos separadores de rendimentos as descargas não vêm: não se inventa um estado. */}
+              {d.estado === 'rejected' ? (
+                <span className={e.estadoDocumento} data-recusado="true">Recusado</span>
+              ) : d.descargas !== undefined && (
+                <span className={e.estadoDocumento} data-aberto={aberto}
+                      title={aberto ? d.descargas.map(dataHora).join('\n') : undefined}>
+                  {aberto ? `Aberto por mim a ${dataHora(d.descargas[0])}` : 'Ainda não aberto'}
+                </span>
+              )}
+              {/* Ligações normais: o navegador mostra o PDF ou a imagem num separador novo. */}
+              <a className={e.botaoLinha} href={`/app/documento/${d.id}`} target="_blank" rel="noopener">Abrir</a>
+              <a className={e.botaoTexto} href={`/app/documento/${d.id}?descarregar`} download>Descarregar</a>
+            </div>
           </li>
         );
       })}

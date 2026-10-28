@@ -226,7 +226,10 @@ export async function enviarDocumento(_anterior: Resultado | null, form: FormDat
     hash,
   });
   if (metadados || !preparado) {
-    return falha('Não foi possível preparar o documento. Um ficheiro idêntico pode estar pendente ou rejeitado.');
+    const m = metadados?.message || '';
+    if (m.includes('pending or rejected')) return falha('Este ficheiro já foi enviado e recusado. Envie outro ou fale comigo nas mensagens.');
+    if (m.includes('Collection locked') || metadados?.code === '42501') return falha('O processo não pode ser alterado neste momento.');
+    return falha('Não foi possível preparar o documento. Tente outra vez.');
   }
 
   const { id, path, reused } = preparado as { id: string; path: string; reused: boolean };
@@ -234,48 +237,32 @@ export async function enviarDocumento(_anterior: Resultado | null, form: FormDat
     const { error: upload } = await client.storage
       .from('irs-documents')
       .upload(path, guardar.bytes, { contentType: guardar.mime, upsert: false });
-    if (upload) {
-      return falha('O carregamento falhou. O envio ficou pendente; contacte o contabilista antes de repetir.');
-    }
+    // Um envio retomado pode já ter o ficheiro lá: segue-se para a conclusão,
+    // que confirma no Storage se ele chegou mesmo.
+    const jaLa = upload && /exist|duplicate/i.test(upload.message);
+    if (upload && !jaLa) return falha('O carregamento do ficheiro falhou. Tente outra vez.');
   }
 
-  const { error: terminado } = await client
-    .from('documents')
-    .update({
-      state: 'uploaded',
-      category: categoriaPedida || null,
-      property_id: imovel || null,
-      description: descricao || null,
-    })
-    .eq('id', id);
-  if (terminado) return falha('O ficheiro foi recebido mas falta confirmar o estado. Contacte o contabilista.');
+  // A conclusão é da base: confirma que o ficheiro chegou e grava o
+  // separador, o imóvel e a descrição. Só então o documento conta.
+  const { error: terminado } = await client.rpc('concluir_documento', {
+    p_documento: id,
+    p_categoria: categoriaPedida || null,
+    p_imovel: imovel && uuid(imovel) ? imovel : null,
+    p_descricao: descricao || null,
+  });
+  if (terminado) {
+    console.error(JSON.stringify({ event: 'rr_documento_por_concluir', documento: id, erro: terminado.message }));
+    return falha(terminado.message.includes('File not received')
+      ? 'O ficheiro não chegou ao servidor. Tente outra vez.'
+      : 'Não foi possível concluir o envio. Tente outra vez.');
+  }
   if (reused) return feito('Documento já existia e foi reaproveitado.');
   if (guardar.convertido) {
     const poupanca = Math.round((1 - guardar.bytes.byteLength / bytes.byteLength) * 100);
     return feito(`Documento recebido. Guardado em WebP, menos ${poupanca}% de espaço.`);
   }
   return feito('Documento recebido.');
-}
-
-export async function abrirDocumento(_anterior: Resultado | null, form: FormData): Promise<Resultado> {
-  const { client } = await identity();
-  const { conta } = alvo(form);
-  const id = texto(form, 'documento');
-  if (!uuid(id)) return falha('Documento inválido.');
-
-  const { data } = await client
-    .from('documents')
-    .select('storage_path,state')
-    .eq('id', id)
-    .eq('account_id', conta)
-    .single();
-  if (!data || !['uploaded', 'reviewed'].includes(data.state)) return falha('Documento indisponível.');
-
-  const { data: assinado, error } = await client.storage
-    .from('irs-documents')
-    .createSignedUrl(data.storage_path, 60, { download: true });
-  if (error || !assinado) return falha('Não foi possível abrir o documento.');
-  return { ok: true, url: assinado.signedUrl };
 }
 
 // ------------------------------------------------- mensagens e andamento
