@@ -250,17 +250,22 @@ export async function orcamento(processo: string, cupao = '') {
 /* O cliente submete o seu processo. Era o primeiro passo do percurso e não
    existia: só o gabinete conseguia marcar um processo como submetido. Os
    pré-requisitos são verificados no servidor; aqui só se traduz a resposta. */
+/** Submeter. Sem pagamento ainda (pagar depois), o cliente confirma os
+    dados e aceita os Termos no mesmo ecrã do pagamento, e isso fica
+    registado; ao submeter outra vez um processo já pago, já foi aceite. */
 export async function submeterProcesso(
-  processo: string,
+  processo: string, consentimentos?: { dados: boolean; termos: boolean },
 ): Promise<Resposta & { faltas?: string[] }> {
   const { erro } = await doProcesso(processo);
   if (erro) return { ok: false, erro };
+  if (consentimentos && (!consentimentos.dados || !consentimentos.termos)) {
+    return { ok: false, erro: 'Para submeter, confirme os dados e aceite os Termos e Condições.' };
+  }
 
   const cliente = await supabase();
   const { data, error } = await cliente.rpc('submeter_processo', { processo });
   if (error) {
     if (error.code === 'P0004') return { ok: false, erro: 'Este processo já foi submetido.' };
-    if (error.code === 'P0005') return { ok: false, erro: 'Para submeter, pague primeiro no separador Pagamento.' };
     return { ok: false, erro: error.message };
   }
 
@@ -271,6 +276,14 @@ export async function submeterProcesso(
       erro: 'Falta completar o processo antes de o submeter.',
       faltas: r.faltas || [],
     };
+  }
+  if (consentimentos) {
+    const { registar } = await import('./atividade');
+    const { LEGAL_VERSION } = await import('./legal');
+    await registar(cliente, 'submissao_aceite',
+      'Confirmou os dados, os documentos e o valor; aceitou os Termos e Condições e a Política de Privacidade'
+        + ` (versão ${LEGAL_VERSION}) e o início do serviço antes de decorridos 14 dias. Pagamento a fazer depois.`,
+      processo);
   }
   revalidatePath('/app');
   return { ok: true };

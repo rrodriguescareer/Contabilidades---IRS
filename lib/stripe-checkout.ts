@@ -4,6 +4,7 @@ import { siteUrl } from './supabase';
 import { adminClient } from './admin-client';
 import { uuid } from './data';
 import { stripe, type Sessao } from './stripe-core';
+import { LEGAL_VERSION } from './legal';
 
 /* O pagamento acontece dentro da plataforma, não numa página do Stripe.
  *
@@ -31,11 +32,19 @@ function chavePublicavel() {
    trás com o erro escondido no endereço, que era o "volta ao menu inicial".
    Com a chave publicável, o formulário do Stripe monta-se dentro do separador;
    sem ela, abre-se a página do Stripe, para o pagamento nunca ficar parado. */
+/** O que o cliente aceitou antes de pagar. Vai para o registo de atividade:
+    é a prova numa contestação e o pedido expresso para o serviço começar
+    dentro do prazo de livre resolução. */
+export type Consentimentos = { dados: boolean; termos: boolean };
+
 export async function abrirPagamento(
-  conta: string, processo: string, cupao: string, esperado: number,
+  conta: string, processo: string, cupao: string, esperado: number, consentimentos: Consentimentos,
 ): Promise<Abertura> {
   const { client } = await session();
   if (!uuid(conta) || !uuid(processo)) return { ok: false, erro: 'Selecione o processo.' };
+  if (!consentimentos?.dados || !consentimentos?.termos) {
+    return { ok: false, erro: 'Para pagar, confirme os dados e aceite os Termos e Condições.' };
+  }
   const codigo = cupao.trim().slice(0, 40);
 
   const origem = siteUrl();
@@ -78,7 +87,7 @@ export async function abrirPagamento(
     }
     // Expirada ou de outro modo (embebida vs. página): fecha-se e abre-se outra.
     await adminClient().rpc('cancelar_tentativa_de_pagamento', { attempt: tentativa.id }).then(() => null, () => null);
-    return abrirPagamento(conta, processo, codigo, esperado);
+    return abrirPagamento(conta, processo, codigo, esperado, consentimentos);
   }
 
   const modoEmbebido = Boolean(chave);
@@ -125,7 +134,9 @@ export async function abrirPagamento(
   if (!semLigar) {
     const { registar } = await import('./atividade');
     await registar(client, 'pagamento_iniciado',
-      `${(tentativa.amount_cents / 100).toFixed(2).replace('.', ',')} € · sessão Stripe ${criada.dados.id}`, processo);
+      `${(tentativa.amount_cents / 100).toFixed(2).replace('.', ',')} € · sessão Stripe ${criada.dados.id}`
+        + ' · confirmou os dados, os documentos e o valor; aceitou os Termos e Condições e a Política de'
+        + ` Privacidade (versão ${LEGAL_VERSION}) e o início do serviço antes de decorridos 14 dias`, processo);
   }
   if (semLigar) {
     console.error(JSON.stringify({ event: 'rr_pagamento_anexar', erro: semLigar.message }));
@@ -156,7 +167,7 @@ function traduzir(mensagem?: string) {
   if (!mensagem) return 'Não foi possível iniciar o pagamento.';
   if (mensagem.includes('Incomplete case')) return 'Falta completar o processo antes de pagar.';
   if (mensagem.includes('Price changed')) return 'O preço mudou entretanto. Reveja-o antes de confirmar.';
-  if (mensagem.includes('not collecting')) return 'Este processo já foi submetido.';
+  if (mensagem.includes('Case is closed')) return 'Este processo já está fechado.';
   if (mensagem.includes('Holder missing')) return 'Falta o titular no agregado.';
   if (mensagem.includes('pending uploads')) return 'Há documentos ainda a carregar. Espere que terminem.';
   return 'Não foi possível iniciar o pagamento.';

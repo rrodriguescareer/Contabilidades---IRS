@@ -33,6 +33,10 @@ export function Acompanhamento({ dados, ir }: { dados: Dados; ir: (v: Vista) => 
   const porVir = LINHA.slice(indice + 1);
   const meus = prontidao.filter((p) => p.de === 'cliente');
   const podeSubmeter = proc?.estado === 'collecting' || proc?.estado === 'returned';
+  const checkout = (dados.checkout as { estado: string } | null) || null;
+  // Submetido sem pagar: o pagamento continua disponível até ao fecho.
+  const porPagar = !podeSubmeter && proc?.estado !== 'closed'
+    && checkout?.estado !== 'paid' && checkout?.estado !== 'pending';
 
   return (
     <>
@@ -73,7 +77,18 @@ export function Acompanhamento({ dados, ir }: { dados: Dados; ir: (v: Vista) => 
         )}
       </section>
 
-      {/* 3. O que falta da parte do cliente. Submeter é pagar: o botão leva lá. */}
+      {porPagar && (
+        <section className={e.cartao}>
+          <h2>Falta o pagamento</h2>
+          <p className="suave">O processo já está na minha fila. O pagamento pode ser feito a qualquer momento.</p>
+          <div className="acoes-membro">
+            <button type="button" className="btn" onClick={() => ir('pagamento')}>Pagar</button>
+          </div>
+        </section>
+      )}
+
+      {/* 3. O que falta da parte do cliente. O botão leva ao pagamento, onde se
+          paga e submete — ou se submete e paga depois. */}
       {podeSubmeter && meus.length > 0 && (
         <section className={e.cartao}>
           <h2>{proc?.estado === 'returned' ? 'Para submeter outra vez' : 'Antes de submeter'}</h2>

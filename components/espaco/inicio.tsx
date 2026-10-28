@@ -34,16 +34,20 @@ export function Inicio({ dados, ir }: { dados: Dados; ir: (v: Vista) => void }) 
   const emRecolha = proc?.estado === 'collecting' || proc?.estado === 'returned';
   const faltas = prontidao.filter((p) => p.bloqueia && p.estado === 'falta');
   const pago = checkout?.estado === 'paid';
+  // Submetido sem pagar: o pagamento continua disponível até ao fecho.
+  const porPagar = !emRecolha && !pago && checkout?.estado !== 'pending' && proc?.estado !== 'closed';
 
   // O passo seguinte, numa frase e num botão.
   const seguinte: { titulo: string; texto: string; vista: Vista; botao: string } = !emRecolha
-    ? { titulo: 'Está tudo comigo.', texto: estado?.nota || 'Aviso-o a cada passo.', vista: 'progresso', botao: 'Ver o acompanhamento' }
+    ? porPagar
+      ? { titulo: 'Falta o pagamento.', texto: 'O processo já está na minha fila. Pode pagar quando quiser.', vista: 'pagamento', botao: 'Pagar' }
+      : { titulo: 'Está tudo comigo.', texto: estado?.nota || 'Aviso-o a cada passo.', vista: 'progresso', botao: 'Ver o acompanhamento' }
     : faltas.length > 0
       ? { titulo: 'Falta pouco.', texto: `Antes de submeter: ${faltas.map((f) => f.rotulo.toLowerCase()).join(', ')}.`,
           vista: DESTINO[faltas[0].chave]?.vista || 'agregado', botao: DESTINO[faltas[0].chave]?.acao || 'Completar' }
       : pago
         ? { titulo: 'Pode submeter outra vez.', texto: 'Já está pago. Reveja o que lhe pedi e submeta.', vista: 'pagamento', botao: 'Submeter' }
-        : { titulo: 'Está pronto a submeter.', texto: 'Reveja o preço e pague: o processo entra logo na minha fila.', vista: 'pagamento', botao: 'Rever e pagar' };
+        : { titulo: 'Está pronto a submeter.', texto: 'Reveja o preço e pague — ou submeta já e pague depois.', vista: 'pagamento', botao: 'Rever e submeter' };
 
   return (
     <div className={e.inicio}>
@@ -126,7 +130,7 @@ export function Inicio({ dados, ir }: { dados: Dados; ir: (v: Vista) => void }) 
           <strong>{contagens.documentos ?? 0}</strong><span>Documentos</span>
         </button>
         <button type="button" onClick={() => ir('pagamento')}>
-          <strong>{pago ? 'Pago' : checkout?.estado === 'pending' ? 'A aguardar' : '—'}</strong>
+          <strong>{pago ? 'Pago' : checkout?.estado === 'pending' ? 'A aguardar' : porPagar ? 'Por pagar' : '—'}</strong>
           <span>{pago && checkout ? euros(checkout.total) : 'Pagamento'}</span>
         </button>
       </div>

@@ -4,7 +4,7 @@ import { abrirPagamento, desistirDoPagamento, type Abertura } from '@/lib/stripe
 import { PagarEmbebido } from '@/components/pagar-embebido';
 import { orcamento, submeterProcesso } from '@/lib/acoes-espaco';
 import { emitirFaturaDoMeuProcesso } from '@/lib/acoes-cegid';
-import type { Prontidao } from '@/lib/fluxo';
+import { emRecolha, type Prontidao } from '@/lib/fluxo';
 import type { Dados, Vista } from './espaco';
 import e from './espaco.module.css';
 
@@ -36,10 +36,12 @@ const INCLUIDO = [
   'Fatura-recibo em seu nome, enviada por email',
 ];
 
-/* O momento do pagamento. Pagar é também submeter: é por isso que o botão só
-   acende quando o processo está pronto, e que a lista do que falta aparece no
-   lugar do botão. O formulário do Stripe monta-se na mesma caixa — o cliente
-   nunca sai da plataforma. */
+/* O momento do pagamento. Com o processo em recolha, pagar é também submeter:
+   é por isso que o botão só acende quando o processo está pronto, e que a
+   lista do que falta aparece no lugar do botão. Também se pode submeter já e
+   pagar depois; o pagamento fica disponível em qualquer fase até ao fecho. O
+   formulário do Stripe monta-se na mesma caixa — o cliente nunca sai da
+   plataforma. */
 export function Pagamento({
   dados, conta, processo, teste, ir, aoMudar,
 }: {
@@ -48,7 +50,11 @@ export function Pagamento({
 }) {
   const checkout = (dados.checkout as Checkout) || null;
   const proc = (dados.processo as { estado: string } | null) || null;
-  const faltas = ((dados.prontidao as Prontidao[]) || []).filter((p) => p.bloqueia && p.estado === 'falta');
+  const recolha = emRecolha(proc?.estado);
+  // Depois de submetido, a prontidão já foi verificada: não volta a travar.
+  const faltas = recolha
+    ? ((dados.prontidao as Prontidao[]) || []).filter((p) => p.bloqueia && p.estado === 'falta')
+    : [];
   const pago = checkout?.estado === 'paid';
 
   const [cupao, setCupao] = useState('');
@@ -82,19 +88,29 @@ export function Pagamento({
   }, [pago, faltas.length, recalcular]);
 
   if (pago && checkout) {
-    return <Recibo checkout={checkout} devolvido={proc?.estado === 'returned'} processo={processo}
+    return <Recibo checkout={checkout} estado={proc?.estado || ''} processo={processo}
                    ir={ir} aoMudar={aoMudar} teste={teste} />;
   }
 
   const total = preco?.total_cents ?? 0;
-  const passo = faltas.length > 0 ? 1 : 2;
+  const passos = recolha
+    ? [
+        { titulo: 'Rever o processo e o preço', estado: faltas.length > 0 ? 'atual' : 'feito' },
+        { titulo: 'Pagar', estado: faltas.length > 0 ? 'por-vir' : 'atual' },
+        { titulo: 'Processo submetido', estado: 'por-vir' },
+      ]
+    : [
+        { titulo: 'Processo submetido', estado: 'feito' },
+        { titulo: 'Pagar', estado: 'atual' },
+        { titulo: 'Fatura-recibo por email', estado: 'por-vir' },
+      ];
 
   return (
     <div className={e.pagamento}>
       <ol className={e.passosPagamento}>
-        <li data-estado={passo > 1 ? 'feito' : 'atual'}><span>1</span>Rever o processo e o preço</li>
-        <li data-estado={passo === 2 ? 'atual' : 'por-vir'}><span>2</span>Pagar</li>
-        <li data-estado="por-vir"><span>3</span>Processo submetido</li>
+        {passos.map((p, i) => (
+          <li key={p.titulo} data-estado={p.estado}><span>{i + 1}</span>{p.titulo}</li>
+        ))}
       </ol>
 
       <div className={e.colunasPagamento}>
@@ -145,8 +161,8 @@ export function Pagamento({
         </section>
 
         <CaixaPagar conta={conta} processo={processo} cupao={cupao} total={total}
-                    pronto={Boolean(preco) && !aCalcular} faltas={faltas}
-                    aberto={checkout?.estado === 'pending' ? checkout.id : null} ir={ir} />
+                    pronto={Boolean(preco) && !aCalcular} faltas={faltas} recolha={recolha}
+                    aberto={checkout?.estado === 'pending' ? checkout.id : null} ir={ir} aoMudar={aoMudar} />
       </div>
 
       {teste && <Ensaio processo={processo} />}
@@ -178,23 +194,35 @@ function Cupao({ valor, mudar, aplicar, aCalcular, aviso, aplicado }: {
   );
 }
 
-function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, aberto, ir }: {
+function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, recolha, aberto, ir, aoMudar }: {
   conta: string; processo: string; cupao: string; total: number; pronto: boolean;
-  faltas: Prontidao[]; aberto: string | null; ir: (v: Vista) => void;
+  faltas: Prontidao[]; recolha: boolean; aberto: string | null; ir: (v: Vista) => void; aoMudar: () => void;
 }) {
   const [confirmado, setConfirmado] = useState(false);
+  const [aceite, setAceite] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [embebido, setEmbebido] = useState<Extract<Abertura, { modo: 'embebido' }> | null>(null);
   const [aAbrir, abrir] = useTransition();
+  const [aSubmeter, submeter] = useTransition();
+  const consentimentos = { dados: confirmado, termos: aceite };
 
   const pagar = () =>
     abrir(async () => {
       setErro(null);
-      const r = await abrirPagamento(conta, processo, cupao, total);
+      const r = await abrirPagamento(conta, processo, cupao, total, consentimentos);
       if (!r.ok) { setErro(r.erro); return; }
       if (r.modo === 'pago') { window.location.reload(); return; }
       if (r.modo === 'alojado') { window.location.assign(r.url); return; }
       setEmbebido(r);
+    });
+
+  // Submeter já e pagar depois: o processo entra na fila; o pagamento fica aqui.
+  const submeterSemPagar = () =>
+    submeter(async () => {
+      setErro(null);
+      const r = await submeterProcesso(processo, consentimentos);
+      if (!r.ok) { setErro(r.faltas?.length ? `Falta: ${r.faltas.join(', ')}.` : r.erro || 'Não foi possível submeter.'); return; }
+      aoMudar();
     });
 
   const desistir = (tentativa: string) =>
@@ -224,8 +252,8 @@ function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, aberto, ir 
   if (faltas.length > 0) {
     return (
       <section className={`${e.cartao} ${e.caixaPagar}`}>
-        <h3 className={e.tituloCartao}>Antes de pagar</h3>
-        <p className="suave">Pagar é também submeter o processo. Falta completar:</p>
+        <h3 className={e.tituloCartao}>Antes de submeter</h3>
+        <p className="suave">Para submeter o processo (e pagar), falta completar:</p>
         <ul className={`prontidao ${e.listaFalta}`}>
           {faltas.map((f) => (
             <li key={f.chave} data-estado="falta">
@@ -244,13 +272,15 @@ function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, aberto, ir 
 
   return (
     <section className={`${e.cartao} ${e.caixaPagar}`}>
-      <h3 className={e.tituloCartao}>Pagar e submeter</h3>
+      <h3 className={e.tituloCartao}>{recolha ? 'Pagar e submeter' : 'Pagar'}</h3>
       {aberto ? (
         <p className="aviso-atencao">
           Tem um pagamento por concluir. Continue-o — não é criado um segundo — ou cancele-o para alterar dados.
         </p>
-      ) : (
+      ) : recolha ? (
         <p className="suave">Ao pagar, o processo entra na minha fila e a recolha fecha. A declaração só é entregue na AT depois de eu a rever.</p>
+      ) : (
+        <p className="suave">O processo já está na minha fila. Pode pagar agora: a fatura-recibo segue para o seu email.</p>
       )}
 
       <ul className={e.metodos} aria-label="Métodos de pagamento aceites">
@@ -259,23 +289,37 @@ function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, aberto, ir 
 
       <label className={e.consentimento}>
         <input type="checkbox" checked={confirmado} onChange={(ev) => setConfirmado(ev.target.checked)} />
+        <span>Confirmo os dados e documentos e aceito o valor de <strong>{euros(total)}</strong>.</span>
+      </label>
+      <label className={e.consentimento}>
+        <input type="checkbox" checked={aceite} onChange={(ev) => setAceite(ev.target.checked)} />
         <span>
-          Confirmo os dados e os documentos, aceito o valor de <strong>{euros(total)}</strong> e os{' '}
-          <a href="/termos" target="_blank" rel="noopener">Termos</a> e a{' '}
-          <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.
+          Aceito os <a href="/termos" target="_blank" rel="noopener">Termos e Condições</a>, bem como a{' '}
+          <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>. Concordo que a
+          prestação de serviço seja iniciada num prazo inferior a 14 dias após o pagamento.
         </span>
       </label>
 
       {erro && <p className="aviso-critico">{erro}</p>}
 
       <button id="botao-pagar" type="button" className={`btn ${e.botaoPagar}`}
-              disabled={!pronto || !confirmado || aAbrir} onClick={pagar}>
-        {aAbrir ? 'A abrir o pagamento…' : aberto ? 'Continuar o pagamento' : `Pagar ${euros(total)} e submeter`}
+              disabled={!pronto || !confirmado || !aceite || aAbrir || aSubmeter} onClick={pagar}>
+        {aAbrir ? 'A abrir o pagamento…' : aberto ? 'Continuar o pagamento'
+          : recolha ? `Pagar ${euros(total)} e submeter` : `Pagar ${euros(total)}`}
       </button>
       {aberto && (
         <button type="button" className="btn-texto" disabled={aAbrir} onClick={() => desistir(aberto)}>
           Cancelar o pagamento iniciado
         </button>
+      )}
+      {recolha && !aberto && (
+        <p className={e.pagarDepois}>
+          Prefere pagar mais tarde?{' '}
+          <button type="button" className="btn-texto" disabled={!pronto || !confirmado || !aceite || aSubmeter || aAbrir}
+                  onClick={submeterSemPagar}>
+            {aSubmeter ? 'A submeter…' : 'Submeter agora e pagar depois'}
+          </button>
+        </p>
       )}
       <p className={e.seguro}>
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -288,10 +332,13 @@ function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, aberto, ir 
 }
 
 /* Depois de pago: um recibo, não um formulário. */
-function Recibo({ checkout, devolvido, processo, ir, aoMudar, teste }: {
-  checkout: NonNullable<Checkout>; devolvido: boolean; processo: string;
+const ENTREGUE = ['filed', 'monitoring', 'divergence', 'assessed', 'closed'];
+
+function Recibo({ checkout, estado, processo, ir, aoMudar, teste }: {
+  checkout: NonNullable<Checkout>; estado: string; processo: string;
   ir: (v: Vista) => void; aoMudar: () => void; teste: boolean;
 }) {
+  const devolvido = estado === 'returned';
   const [erro, setErro] = useState<string | null>(null);
   const [aSubmeter, submeter] = useTransition();
   const detalhe = checkout.detalhe;
@@ -322,8 +369,10 @@ function Recibo({ checkout, devolvido, processo, ir, aoMudar, teste }: {
         </table>
 
         <p className={e.reciboNota}>
-          A fatura-recibo segue para o seu email nos próximos minutos. A declaração ainda <strong>não</strong> foi
-          entregue na AT: só depois de eu a rever.
+          A fatura-recibo segue para o seu email nos próximos minutos.
+          {!ENTREGUE.includes(estado) && (
+            <> A declaração ainda <strong>não</strong> foi entregue na AT: só depois de eu a rever.</>
+          )}
         </p>
 
         {devolvido ? (

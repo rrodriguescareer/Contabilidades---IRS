@@ -498,6 +498,9 @@
 }
 .consentimento input { inline-size: 1.1rem; block-size: 1.1rem; margin-block-start: .15rem; accent-color: var(--acao); }
 .consentimento a { color: var(--acao-forte); }
+.pagarDepois { margin: 0; text-align: center; font-size: var(--t-sm); color: var(--texto-suave); }
+.pagarDepois :global(.btn-texto) { padding-inline: .15rem; color: var(--acao-forte); }
+.pagarDepois :global(.btn-texto:disabled) { color: var(--texto-ténue, var(--texto-suave)); cursor: not-allowed; text-decoration: none; }
 .botaoPagar { inline-size: 100%; min-block-size: 3.2rem; font-size: var(--t-md); }
 .seguro {
   display: flex;
