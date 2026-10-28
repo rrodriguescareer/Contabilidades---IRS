@@ -29,7 +29,17 @@ export async function criarFichaAposOnboarding(): Promise<{ aviso?: string }> {
     codigoPostal: p.postal_code,
     localidade: p.locality,
   });
-  if (r.ok) return {};
+  const { registarComoSistema } = await import('./atividade');
+  const conta = context.accounts?.[0]?.id ?? null;
+  const processo = context.cases?.[0]?.id ?? null;
+  if (r.ok) {
+    const id = (r.dados as { data?: { id?: string }; id?: string }).data?.id || (r.dados as { id?: string }).id;
+    await registarComoSistema('cegid_ficha', `NIF ${perfil.nif}${id ? ` · cliente Cegid ${id}` : ''}`,
+      { user: context.id, conta, processo });
+    return {};
+  }
+  await registarComoSistema('cegid_ficha_falhou',
+    `NIF ${perfil.nif} · ${r.nifInvalido ? 'NIF recusado' : r.erro}`, { user: context.id, conta, processo });
   if (r.nifInvalido) {
     const cliente = await supabase();
     await cliente.from('task_alerts').insert({
@@ -88,6 +98,9 @@ export async function emitirFaturaDoMeuProcesso(processo: string): Promise<Respo
       erro: r.nifInvalido ? `O Cegid recusou o NIF ${perfil.nif}.` : r.erro,
     };
   }
+  const { registarComoSistema } = await import('./atividade');
+  await registarComoSistema('cegid_fatura', `${(total / 100).toFixed(2).replace('.', ',')} € · NIF ${perfil.nif} · em preparação`,
+    { user: context.id, conta: context.accounts?.[0]?.id ?? null, processo });
   return {
     ok: true,
     aviso: `Fatura-recibo de ${(total / 100).toFixed(2)} € criada no Cegid, em preparação.`,

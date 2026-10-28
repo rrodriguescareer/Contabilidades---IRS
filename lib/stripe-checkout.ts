@@ -122,6 +122,11 @@ export async function abrirPagamento(
   const { error: semLigar } = await adminClient().rpc('anexar_sessao_de_pagamento', {
     attempt: tentativa.id, provider_id: criada.dados.id, provider_url: criada.dados.url || '',
   });
+  if (!semLigar) {
+    const { registar } = await import('./atividade');
+    await registar(client, 'pagamento_iniciado',
+      `${(tentativa.amount_cents / 100).toFixed(2).replace('.', ',')} € · sessão Stripe ${criada.dados.id}`, processo);
+  }
   if (semLigar) {
     console.error(JSON.stringify({ event: 'rr_pagamento_anexar', erro: semLigar.message }));
     return { ok: false, erro: 'Não foi possível abrir o pagamento. Nada foi cobrado.' };

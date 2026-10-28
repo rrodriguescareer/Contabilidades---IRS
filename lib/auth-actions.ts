@@ -18,6 +18,8 @@ export async function signIn(form:FormData){
  const {data:auth,error:failure}=await client.auth.signInWithPassword({email,password});
  console.info(JSON.stringify({event:'rr_login_timing',stage:'password',ms:Math.round(performance.now()-started)}));
  if(failure||!auth.user)error(signInError(failure?.code));
+ // Prova numa contestação: quem entrou, quando, de que IP e de que browser.
+ {const {registar}=await import('./atividade');await registar(client,'login');}
  // The protected destination verifies database permissions once using session().
  // Avoid a duplicate context lookup before and after this redirect.
  // Volta ao que o visitante tentou abrir, desde que seja um caminho desta
@@ -53,7 +55,8 @@ export async function signUp(form: FormData) {
   }catch{/* sem chave de serviço, segue — mais vale registar do que travar */}
 
   const client=await supabase();
-  const {error:failure}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${origin}/auth/callback?next=/app`,data:{terms_accepted:true,terms_version:LEGAL_VERSION,privacy_version:LEGAL_VERSION}}});
+  const {data:registo,error:failure}=await client.auth.signUp({email,password,options:{emailRedirectTo:`${origin}/auth/callback?next=/app`,data:{terms_accepted:true,terms_version:LEGAL_VERSION,privacy_version:LEGAL_VERSION}}});
+  if(!failure&&registo?.user?.id){const {registarComoSistema}=await import('./atividade');await registarComoSistema('registo',`Registo com ${email}; Termos e Política aceites (versão ${LEGAL_VERSION})`,{user:registo.user.id},true);}
   if (failure){
    console.error(JSON.stringify({event:'rr_registo_falhou',codigo:failure.code,erro:failure.message}));
    // O Supabase tem a sua própria regra de palavra-passe; se for mais exigente

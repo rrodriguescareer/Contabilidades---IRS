@@ -80,5 +80,15 @@ export async function POST(request: NextRequest) {
   // Um 500 faz o Stripe repetir, que é o que se quer se a base falhou.
   if (error) return NextResponse.json({ erro: 'não liquidado' }, { status: 500 });
 
+  // Prova numa contestação: o que o Stripe disse, e quando.
+  const { data: tentativa } = await adminClient().from('irs_checkouts')
+    .select('account_id, case_id, user_id').eq('id', s.client_reference_id).maybeSingle();
+  if (tentativa) {
+    const { registarComoSistema } = await import('@/lib/atividade');
+    await registarComoSistema('stripe_evento',
+      `${evento.type} · sessão ${s.id} · estado ${s.payment_status}${s.amount_total != null ? ` · ${(s.amount_total / 100).toFixed(2).replace('.', ',')} €` : ''}`,
+      { user: tentativa.user_id, conta: tentativa.account_id, processo: tentativa.case_id });
+  }
+
   return NextResponse.json({ recebido: true });
 }
