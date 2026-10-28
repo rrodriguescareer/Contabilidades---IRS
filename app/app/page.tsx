@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { session } from '@/lib/auth';
 import { carregarEspaco, vistaValida } from '@/lib/espaco';
 import { Espaco } from '@/components/espaco/espaco';
@@ -44,6 +45,7 @@ export default async function AreaCliente({ searchParams }: Props) {
       vistaInicial={vista}
       dadosIniciais={dados ?? { vista }}
       teste={await modoDeTeste()}
+      chegada={(await cookies()).get('rr_chegada')?.value === '1'}
     />
   );
 }

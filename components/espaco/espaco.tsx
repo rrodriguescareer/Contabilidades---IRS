@@ -38,12 +38,13 @@ type Props = {
   vistaInicial: string;
   dadosIniciais: Dados;
   teste: boolean;
+  chegada?: boolean;
 };
 
 export function Espaco(props: Props) {
   return (
     <Idioma>
-      <Chegada nome={props.nome} />
+      <Chegada ativo={Boolean(props.chegada)} nome={props.nome} />
       <Painel {...props} />
     </Idioma>
   );
@@ -162,6 +163,16 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
             <a href="https://www.rr-contabilidade.com/contacto/" target="_blank" rel="noopener">Contactos</a>
           </div>
         </div>
+
+        <form action={signOut} className={e.sairForm}>
+          <button type="submit" className={e.sair}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+                 strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3" /><path d="M10 17l-5-5 5-5" /><path d="M5 12h11" />
+            </svg>
+            <span>{t('sair')}</span>
+          </button>
+        </form>
       </aside>
 
       <div className={e.principal}>
@@ -175,7 +186,7 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
               {lingua === 'pt' ? 'EN' : 'PT'}
             </button>
             <Link href="/perfil" className={e.botaoTopo}>{t('conta')}</Link>
-            <form action={signOut}>
+            <form action={signOut} className={e.sairTopo}>
               <button type="submit" className={e.botaoTopo}>{t('sair')}</button>
             </form>
           </div>
