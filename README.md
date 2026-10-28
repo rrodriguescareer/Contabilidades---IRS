@@ -16,7 +16,7 @@ A conta confirmada do contabilista é encaminhada para a Gestão quando `NEXT_PU
 
 ## Ativação
 
-**A instalação existente deve executar `supabase/update-current.sql` do repositório Gestão**, no SQL Editor do Supabase partilhado. O ficheiro aplica apenas as atualizações 005–009 em falta e pode ser repetido sem reiniciar dados. Não repetir a instalação inicial. A nova versão legal é `2026-10-23.3`; os registos anteriores são preservados.
+**A instalação existente deve executar `supabase/update-current.sql` do repositório Gestão**, no SQL Editor do Supabase partilhado. O ficheiro aplica apenas as atualizações 005–009 em falta e pode ser repetido sem reiniciar dados. Não repetir a instalação inicial. A nova versão legal é `2026-10-28.1`; os registos anteriores são preservados.
 
 Consultar o [guia completo de ativação](https://github.com/rrodriguescareer/Contabilidades---Clientes/blob/main/docs/ativacao.md) para configurar o remetente RR, templates de email, conta do contabilista, convites e Revolut. O template de confirmação tem assunto **RR - IRS - Ativação da Sua Conta**, mas assunto/remetente/SMTP exigem configuração no Supabase e no fornecedor de envio. O código não altera remotamente essas configurações.
 

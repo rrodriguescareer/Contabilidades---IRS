@@ -280,7 +280,7 @@ function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, recolha, ab
       ) : recolha ? (
         <p className="suave">Ao pagar, o processo entra na minha fila e a recolha fecha. A declaração só é entregue na AT depois de eu a rever.</p>
       ) : (
-        <p className="suave">O processo já está na minha fila. Pode pagar agora: a fatura-recibo segue para o seu email.</p>
+        <p className="suave">O processo já está na minha fila. Pode pagar agora: a fatura-recibo é emitida em seu nome e enviada para o seu email.</p>
       )}
 
       <ul className={e.metodos} aria-label="Métodos de pagamento aceites">
@@ -369,7 +369,7 @@ function Recibo({ checkout, estado, processo, ir, aoMudar, teste }: {
         </table>
 
         <p className={e.reciboNota}>
-          A fatura-recibo segue para o seu email nos próximos minutos.
+          A fatura-recibo é emitida em seu nome e enviada para o seu email.
           {!ENTREGUE.includes(estado) && (
             <> A declaração ainda <strong>não</strong> foi entregue na AT: só depois de eu a rever.</>
           )}
