@@ -88,18 +88,21 @@ export function Pagamento({
   }, [pago, faltas.length, recalcular]);
 
   const extras = (dados.extras as Extra[]) || [];
-  const reembolsos = (dados.reembolsos as { total: number; motivo: string; em: string }[]) || [];
-  const adicionais = (extras.length > 0 || reembolsos.length > 0) && (
-    <Adicionais extras={extras} reembolsos={reembolsos} />
+  const reembolsos = (dados.reembolsos as Reembolso[]) || [];
+  const pendentes = extras.filter((x) => x.estado !== 'paid');
+  const extrato = (
+    <Extrato preparacao={pago && checkout ? checkout : null}
+             extras={extras.filter((x) => x.estado === 'paid')} reembolsos={reembolsos} />
   );
 
   if (pago && checkout) {
     return (
-      <>
-        {adicionais}
-        <Recibo checkout={checkout} estado={proc?.estado || ''} processo={processo}
-                ir={ir} aoMudar={aoMudar} teste={teste} />
-      </>
+      <div className={e.pagamento}>
+        {pendentes.length > 0 && <Pendentes extras={pendentes} />}
+        <Recibo checkout={checkout} estado={proc?.estado || ''} processo={processo} ir={ir} aoMudar={aoMudar} />
+        {extrato}
+        {teste && <Ensaio processo={processo} />}
+      </div>
     );
   }
 
@@ -118,7 +121,7 @@ export function Pagamento({
 
   return (
     <div className={e.pagamento}>
-      {adicionais}
+      {pendentes.length > 0 && <Pendentes extras={pendentes} />}
       <ol className={e.passosPagamento}>
         {passos.map((p, i) => (
           <li key={p.titulo} data-estado={p.estado}><span>{i + 1}</span>{p.titulo}</li>
@@ -177,6 +180,7 @@ export function Pagamento({
                     aberto={checkout?.estado === 'pending' ? checkout.id : null} ir={ir} aoMudar={aoMudar} />
       </div>
 
+      {(extras.some((x) => x.estado === 'paid') || reembolsos.length > 0) && extrato}
       {teste && <Ensaio processo={processo} />}
     </div>
   );
@@ -346,9 +350,11 @@ function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, recolha, ab
 /* Depois de pago: um recibo, não um formulário. */
 const ENTREGUE = ['filed', 'monitoring', 'divergence', 'assessed', 'closed'];
 
-function Recibo({ checkout, estado, processo, ir, aoMudar, teste }: {
+/* Depois de pago: um recibo, alinhado com o resto do ecrã. À esquerda o que
+   foi pago, à direita o que acontece a seguir. */
+function Recibo({ checkout, estado, processo, ir, aoMudar }: {
   checkout: NonNullable<Checkout>; estado: string; processo: string;
-  ir: (v: Vista) => void; aoMudar: () => void; teste: boolean;
+  ir: (v: Vista) => void; aoMudar: () => void;
 }) {
   const devolvido = estado === 'returned';
   const [erro, setErro] = useState<string | null>(null);
@@ -356,15 +362,19 @@ function Recibo({ checkout, estado, processo, ir, aoMudar, teste }: {
   const detalhe = checkout.detalhe;
 
   return (
-    <div className={e.pagamento}>
+    <div className={e.colunasPagamento}>
       <section className={`${e.cartao} ${e.recibo}`}>
-        <span className={e.reciboVisto} aria-hidden="true">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4"
-               strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-        </span>
-        <h2>Pagamento recebido</h2>
-        <p className={e.reciboValor}>{euros(checkout.total)}</p>
-        {checkout.pago_em && <p className="suave">{dataHora(checkout.pago_em)}</p>}
+        <div className={e.reciboTopo}>
+          <span className={e.reciboVisto} aria-hidden="true">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6"
+                 strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
+          </span>
+          <div>
+            <h2>Preparação do IRS paga</h2>
+            {checkout.pago_em && <p className="suave">{dataHora(checkout.pago_em)}</p>}
+          </div>
+          <p className={e.reciboValor}>{euros(checkout.total)}</p>
+        </div>
 
         <table className={e.linhasPreco}>
           <tbody>
@@ -379,35 +389,36 @@ function Recibo({ checkout, estado, processo, ir, aoMudar, teste }: {
             ) : null}
           </tbody>
         </table>
+      </section>
 
-        <p className={e.reciboNota}>
+      <section className={`${e.cartao} ${e.aSeguir}`}>
+        <h3 className={e.tituloCartao}>O que acontece a seguir</h3>
+        <p className="suave">
           A fatura-recibo é emitida em seu nome e enviada para o seu email.
-          {!ENTREGUE.includes(estado) && (
-            <> A declaração ainda <strong>não</strong> foi entregue na AT: só depois de eu a rever.</>
-          )}
+          {!ENTREGUE.includes(estado) && ' A declaração só é entregue na AT depois de revista pelo contabilista.'}
         </p>
-
         {devolvido ? (
           <>
-            <p className="aviso-atencao">Devolvi-lhe o processo para completar. Quando tiver corrigido, submeta outra vez — não paga de novo.</p>
+            <p className="aviso-atencao">O processo foi devolvido para correção. Depois de completar, volte a submeter — não é necessário pagar de novo.</p>
             {erro && <p className="aviso-critico">{erro}</p>}
-            <button type="button" className="btn" disabled={aSubmeter}
-                    onClick={() => submeter(async () => {
-                      setErro(null);
-                      const r = await submeterProcesso(processo);
-                      if (!r.ok) { setErro(r.faltas?.length ? `Falta: ${r.faltas.join(', ')}.` : r.erro || 'Não foi possível submeter.'); return; }
-                      aoMudar();
-                    })}>
-              {aSubmeter ? 'A submeter…' : 'Submeter outra vez'}
-            </button>
+            <div>
+              <button type="button" className="btn" disabled={aSubmeter}
+                      onClick={() => submeter(async () => {
+                        setErro(null);
+                        const r = await submeterProcesso(processo);
+                        if (!r.ok) { setErro(r.faltas?.length ? `Falta: ${r.faltas.join(', ')}.` : r.erro || 'Não foi possível submeter.'); return; }
+                        aoMudar();
+                      })}>
+                {aSubmeter ? 'A submeter…' : 'Voltar a submeter'}
+              </button>
+            </div>
           </>
         ) : (
-          <button type="button" className="btn btn-secundario" onClick={() => ir('progresso')}>
-            Acompanhar o processo
-          </button>
+          <div>
+            <button type="button" className="btn btn-secundario" onClick={() => ir('progresso')}>Ver o acompanhamento</button>
+          </div>
         )}
       </section>
-      {teste && <Ensaio processo={processo} />}
     </div>
   );
 }
@@ -435,15 +446,15 @@ function Ensaio({ processo }: { processo: string }) {
 }
 
 type Extra = { id: string; estado: string; total: number; descricao: string | null; pedido_em: string; pago_em: string | null };
+type Reembolso = { total: number; motivo: string; em: string };
 
-/* Os pagamentos adicionais que o contabilista pediu, e os reembolsos feitos.
-   Cada pedido paga-se aqui, no mesmo formulário seguro da preparação. */
-function Adicionais({ extras, reembolsos }: { extras: Extra[]; reembolsos: { total: number; motivo: string; em: string }[] }) {
+/* Os pagamentos adicionais pedidos pelo contabilista e ainda por pagar. Ficam
+   no topo, porque são a única coisa a fazer neste separador. */
+function Pendentes({ extras }: { extras: Extra[] }) {
   const [aceite, setAceite] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const [embebido, setEmbebido] = useState<{ extra: string; chave: string; segredo: string } | null>(null);
   const [aAbrir, abrir] = useTransition();
-  const porPagar = extras.filter((x) => x.estado !== 'paid');
 
   const pagar = (extra: string) =>
     abrir(async () => {
@@ -456,27 +467,12 @@ function Adicionais({ extras, reembolsos }: { extras: Extra[]; reembolsos: { tot
     });
 
   return (
-    <section className={`${e.cartao} ${e.adicionais}`}>
-      <h3 className={e.tituloCartao}>{porPagar.length > 0 ? 'Pagamento adicional pedido' : 'Pagamentos adicionais e reembolsos'}</h3>
-      {extras.length > 0 && (
-        <ul className={e.listaAdicionais}>
-          {extras.map((x) => (
-            <li key={x.id}>
-              <div>
-                <strong>{x.descricao || 'Pagamento adicional'}</strong>
-                <span>{x.estado === 'paid' && x.pago_em ? `Pago a ${dataHora(x.pago_em)}` : `Pedido a ${dataHora(x.pedido_em)}`}</span>
-              </div>
-              <strong>{euros(x.total)}</strong>
-              {x.estado !== 'paid' && embebido?.extra !== x.id && (
-                <button type="button" className="btn" disabled={!aceite || aAbrir} onClick={() => pagar(x.id)}>
-                  {aAbrir ? 'A abrir…' : x.estado === 'pending' ? 'Continuar o pagamento' : `Pagar ${euros(x.total)}`}
-                </button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      {porPagar.length > 0 && !embebido && (
+    <section className={`${e.cartao} ${e.pendentes}`}>
+      <div>
+        <h3 className={e.tituloCartao}>{extras.length > 1 ? 'Pagamentos adicionais pedidos' : 'Pagamento adicional pedido'}</h3>
+        <p className="suave">Valor combinado com o contabilista. O pagamento é feito aqui, de forma segura, pela Stripe.</p>
+      </div>
+      {!embebido && (
         <label className={e.consentimento}>
           <input type="checkbox" checked={aceite} onChange={(ev) => setAceite(ev.target.checked)} />
           <span>
@@ -485,25 +481,62 @@ function Adicionais({ extras, reembolsos }: { extras: Extra[]; reembolsos: { tot
           </span>
         </label>
       )}
+      <ul className={e.listaMovimentos}>
+        {extras.map((x) => (
+          <li key={x.id}>
+            <div>
+              <strong>{x.descricao || 'Pagamento adicional'}</strong>
+              <span>Pedido a {dataHora(x.pedido_em)}{x.estado === 'pending' ? ' · a aguardar confirmação' : ''}</span>
+            </div>
+            <strong className={e.valorMovimento}>{euros(x.total)}</strong>
+            {embebido?.extra !== x.id && (
+              <button type="button" className="btn" disabled={!aceite || aAbrir} onClick={() => pagar(x.id)}>
+                {aAbrir ? 'A abrir…' : x.estado === 'pending' ? 'Continuar' : 'Pagar'}
+              </button>
+            )}
+          </li>
+        ))}
+      </ul>
       {erro && <p className="aviso-critico">{erro}</p>}
       {embebido && (
         <div className={e.checkout}>
           <PagarEmbebido chave={embebido.chave} segredo={embebido.segredo} />
         </div>
       )}
-      {reembolsos.length > 0 && (
-        <ul className={e.listaAdicionais}>
-          {reembolsos.map((r, i) => (
-            <li key={i} data-reembolso="true">
-              <div>
-                <strong>Reembolso</strong>
-                <span>{dataHora(r.em)} · {r.motivo}</span>
-              </div>
-              <strong>−{euros(r.total)}</strong>
-            </li>
-          ))}
-        </ul>
-      )}
+    </section>
+  );
+}
+
+/* O extrato: tudo o que foi pago e devolvido, por data, com o total líquido. */
+function Extrato({ preparacao, extras, reembolsos }: {
+  preparacao: NonNullable<Checkout> | null; extras: Extra[]; reembolsos: Reembolso[];
+}) {
+  const linhas = [
+    ...(preparacao ? [{ chave: 'prep', titulo: 'Preparação do IRS', nota: 'Pagamento', em: preparacao.pago_em || '', valor: preparacao.total }] : []),
+    ...extras.map((x) => ({ chave: x.id, titulo: x.descricao || 'Pagamento adicional', nota: 'Pagamento adicional', em: x.pago_em || x.pedido_em, valor: x.total })),
+    ...reembolsos.map((r, i) => ({ chave: `r${i}`, titulo: 'Reembolso', nota: r.motivo, em: r.em, valor: -r.total })),
+  ].sort((a, b) => (a.em < b.em ? 1 : -1));
+  if (linhas.length === 0) return null;
+  const liquido = linhas.reduce((t, l) => t + l.valor, 0);
+
+  return (
+    <section className={e.cartao}>
+      <h3 className={e.tituloCartao}>Movimentos</h3>
+      <ul className={e.listaMovimentos}>
+        {linhas.map((l) => (
+          <li key={l.chave} data-sinal={l.valor < 0 ? 'menos' : 'mais'}>
+            <div>
+              <strong>{l.titulo}</strong>
+              <span>{l.em ? dataHora(l.em) : ''}{l.nota ? ` · ${l.nota}` : ''}</span>
+            </div>
+            <strong className={e.valorMovimento}>{l.valor < 0 ? `−${euros(-l.valor)}` : euros(l.valor)}</strong>
+          </li>
+        ))}
+      </ul>
+      <div className={e.totalPreco}>
+        <span>Total pago</span>
+        <strong>{euros(liquido)}</strong>
+      </div>
     </section>
   );
 }

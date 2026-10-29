@@ -27,16 +27,21 @@ export default async function Pagamento({ searchParams }: Props) {
     else estado = r.pago ? 'pago' : r.aAguardar ? 'aguardar' : 'falhou';
   }
 
-  // O último pagamento deste cliente, para mostrar o valor e o estado final.
-  const { data: pagamento } = await client
+  /* O pagamento que acabou de ser feito: o da sessão que a Stripe devolveu.
+     Antes lia-se o último pagamento criado, e um adicional pago a seguir a
+     outro pedido mostrava o valor do pedido errado. */
+  const pedido = client
     .from('irs_checkouts')
-    .select('id,state,amount_cents,paid_at,case_id')
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .select('id,state,amount_cents,paid_at,case_id,tipo,descricao');
+  const { data: pagamento } = sessao && /^cs_[A-Za-z0-9_]+$/.test(sessao)
+    ? await pedido.eq('provider_order_id', sessao).maybeSingle()
+    : checkout && uuid(checkout)
+      ? await pedido.eq('id', checkout).maybeSingle()
+      : { data: null };
 
   if (pagamento?.state === 'paid') estado = 'pago';
-  else if (estado === 'desconhecido' && checkout && uuid(checkout)) estado = 'aguardar';
+  else if (estado === 'desconhecido' && pagamento) estado = 'aguardar';
+  const extra = pagamento?.tipo === 'extra';
 
   return (
     <main id="principal" className={e.ecra}>
@@ -47,14 +52,24 @@ export default async function Pagamento({ searchParams }: Props) {
           <>
             <h1>Pagamento recebido</h1>
             <p className={e.valor}>{EUROS.format((pagamento?.amount_cents || 0) / 100)}</p>
-            <p className={e.nota}>
-              Recebi o seu processo para revisão. A fatura-recibo segue por email nos
-              próximos minutos.
-            </p>
-            <p className={e.aviso}>
-              A declaração ainda <strong>não</strong> foi submetida à Autoridade Tributária.
-              Acompanhe cada passo no seu processo.
-            </p>
+            {extra ? (
+              <p className={e.nota}>
+                {pagamento?.descricao ? <><strong>{pagamento.descricao}</strong>. </> : null}
+                O pagamento adicional ficou registado no seu processo. A fatura-recibo é emitida em seu nome e
+                enviada para o seu email.
+              </p>
+            ) : (
+              <>
+                <p className={e.nota}>
+                  O pagamento da preparação ficou registado. A fatura-recibo é emitida em seu nome e enviada para
+                  o seu email.
+                </p>
+                <p className={e.aviso}>
+                  A declaração só é entregue na Autoridade Tributária depois de revista pelo contabilista. Pode
+                  acompanhar cada etapa no seu processo.
+                </p>
+              </>
+            )}
           </>
         )}
 
@@ -62,9 +77,8 @@ export default async function Pagamento({ searchParams }: Props) {
           <>
             <h1>A aguardar confirmação</h1>
             <p className={e.nota}>
-              Alguns métodos — como o MB WAY — demoram alguns minutos a confirmar.
-              Não precisa de pagar outra vez: assim que o banco confirmar, o processo avança
-              sozinho e eu fico a saber.
+              Alguns métodos, como o MB WAY ou o Multibanco, demoram alguns minutos a confirmar. Não é
+              necessário pagar outra vez: assim que o pagamento for confirmado, fica registado no processo.
             </p>
           </>
         )}
@@ -73,7 +87,7 @@ export default async function Pagamento({ searchParams }: Props) {
           <>
             <h1>O pagamento não foi concluído</h1>
             <p className={e.nota}>
-              Não foi cobrado nada. Pode voltar ao processo e tentar outra vez.
+              Não foi cobrado qualquer valor. Pode voltar ao separador Pagamento e tentar outra vez.
             </p>
           </>
         )}
@@ -81,19 +95,15 @@ export default async function Pagamento({ searchParams }: Props) {
         {estado === 'desconhecido' && (
           <>
             <h1>Pagamento</h1>
-            <p className={e.nota}>Não encontrei nenhum pagamento recente para mostrar.</p>
+            <p className={e.nota}>Não existe nenhum pagamento recente para mostrar.</p>
           </>
         )}
 
         {erro && <p className="aviso-critico">{erro}</p>}
 
         <div className={e.accoes}>
-          <Link href="/app?separador=progresso" className="btn">Ver o meu processo</Link>
-          {estado !== 'pago' && (
-            <Link href="/app?separador=pagamento" className="btn btn-secundario">
-              Voltar ao pagamento
-            </Link>
-          )}
+          <Link href="/app?separador=pagamento" className="btn">Voltar ao processo</Link>
+          <Link href="/app?separador=progresso" className="btn btn-secundario">Ver o acompanhamento</Link>
         </div>
       </div>
     </main>

@@ -531,34 +531,38 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
 }
 .checkout { min-block-size: 30rem; margin-inline: calc(var(--e-2) * -1); }
 
-.recibo {
-  justify-items: center;
-  max-inline-size: 36rem;
-  margin-inline: auto;
-  inline-size: 100%;
-  padding: var(--e-7) var(--e-6);
-  text-align: center;
-}
-.recibo h2 { font-size: var(--t-xl) !important; }
+.recibo { gap: var(--e-4); }
+.reciboTopo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--e-3); align-items: center; }
+.reciboTopo h2 { margin: 0; font-size: var(--t-lg) !important; }
+.reciboTopo p { margin: 0; }
 .reciboVisto {
-  display: grid;
-  place-items: center;
-  inline-size: 3.6rem;
-  block-size: 3.6rem;
-  border-radius: 999px;
-  background: var(--positivo-suave);
-  color: var(--positivo);
+  display: grid; place-items: center;
+  inline-size: 2.8rem; block-size: 2.8rem; border-radius: 999px;
+  background: var(--positivo-suave); color: var(--positivo);
 }
 .reciboValor {
-  margin: 0;
-  font-family: var(--fonte-titulo);
-  font-size: var(--t-4xl);
-  font-weight: 760;
-  letter-spacing: -.05em;
-  line-height: 1;
+  margin: 0; font-family: var(--fonte-titulo); font-size: var(--t-3xl); font-weight: 760;
+  letter-spacing: -.05em; line-height: 1; font-variant-numeric: tabular-nums;
 }
-.recibo .linhasPreco { text-align: start; }
-.reciboNota { margin: 0; font-size: var(--t-sm); color: var(--texto-suave); max-inline-size: 30rem; }
+.aSeguir { gap: var(--e-3); align-content: start; }
+.pendentes { border-color: var(--acao); box-shadow: 0 0 0 3px rgb(40 103 248 / .08); }
+.listaMovimentos { list-style: none; margin: 0; padding: 0; display: grid; }
+.listaMovimentos li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--e-4); align-items: center;
+  padding: .85rem 0; border-block-start: 1px solid var(--linha);
+}
+.listaMovimentos li:first-child { border-block-start: 0; }
+.listaMovimentos li div { display: grid; gap: .15rem; min-inline-size: 0; }
+.listaMovimentos li div strong { font-size: var(--t-sm); }
+.listaMovimentos li div span { font-size: var(--t-xs); color: var(--texto-suave); }
+.valorMovimento { font-variant-numeric: tabular-nums; white-space: nowrap; font-size: var(--t-base); }
+.listaMovimentos li[data-sinal='menos'] .valorMovimento { color: #0a5c47; }
+@media (max-width: 560px) {
+  .reciboTopo { grid-template-columns: auto minmax(0, 1fr); }
+  .reciboValor { grid-column: 1 / -1; font-size: var(--t-2xl); }
+  .listaMovimentos li { grid-template-columns: minmax(0, 1fr) auto; }
+  .listaMovimentos li .btn { grid-column: 1 / -1; }
+}
 .ensaio { border-style: dashed; }
 
 /* -------------------------------------------------------------- mensagens */
@@ -911,21 +915,6 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
   .cartao { padding: var(--e-4); }
 }
 
-/* Pagamentos adicionais e reembolsos, no topo do separador Pagamento. */
-.adicionais { border-color: var(--acao); }
-.listaAdicionais { list-style: none; margin: 0; padding: 0; display: grid; }
-.listaAdicionais li {
-  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--e-3); align-items: center;
-  padding: .8rem 0; border-block-start: 1px solid var(--linha);
-}
-.listaAdicionais li:first-child { border-block-start: 0; }
-.listaAdicionais li div { display: grid; gap: .15rem; min-inline-size: 0; }
-.listaAdicionais li div span { font-size: var(--t-xs); color: var(--texto-suave); }
-.listaAdicionais li[data-reembolso='true'] > strong { color: #0a5c47; }
-@media (max-width: 560px) {
-  .listaAdicionais li { grid-template-columns: minmax(0, 1fr) auto; }
-  .listaAdicionais li .btn { grid-column: 1 / -1; }
-}
 
 /* No telemóvel e no tablet, o que falta da parte do cliente vem logo a seguir
    ao passo seguinte; as últimas atualizações ficam para o fim. */
