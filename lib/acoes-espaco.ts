@@ -285,6 +285,10 @@ export async function submeterProcesso(
         + ` (versão ${LEGAL_VERSION}) e o início do serviço antes de decorridos 14 dias. Pagamento a fazer depois.`,
       processo);
   }
+  {
+    const { avisarSubmissao } = await import('./avisos');
+    await avisarSubmissao(processo, eu);
+  }
   revalidatePath('/app');
   return { ok: true };
 }
@@ -323,9 +327,14 @@ export async function enviarMensagemAoGabinete(processo: string, corpo: string):
   const texto = corpo.trim().slice(0, 4000);
   if (!texto) return { ok: false, erro: 'Escreva a mensagem.' };
   const cliente = await supabase();
-  const { error } = await cliente
+  const { data: msg, error } = await cliente
     .from('messages')
-    .insert({ account_id: conta, case_id: processo, body: texto, author_id: eu });
+    .insert({ account_id: conta, case_id: processo, body: texto, author_id: eu })
+    .select('id').single();
   if (error) return { ok: false, erro: 'Não foi possível enviar. Tente outra vez.' };
+  if (msg?.id && eu) {
+    const { avisarMensagem } = await import('./avisos');
+    await avisarMensagem(msg.id, processo, eu, texto);
+  }
   return { ok: true };
 }

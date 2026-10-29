@@ -118,8 +118,13 @@ export async function abrirPagamento(
         },
       },
     }],
-    metadata: { tentativa: tentativa.id, processo },
-    payment_intent_data: { metadata: { tentativa: tentativa.id } },
+    // O email e a descrição dizem na Stripe de quem e de quê é cada pagamento.
+    ...(user.email ? { customer_email: user.email } : {}),
+    metadata: { tentativa: tentativa.id, processo, tipo: 'preparacao' },
+    payment_intent_data: {
+      description: 'Preparação do IRS 2026',
+      metadata: { tentativa: tentativa.id, processo, tipo: 'preparacao' },
+    },
   }, { idempotencia: `irs-${tentativa.id}-${modoEmbebido ? 'emb' : 'pag'}` });
 
   if (!criada.ok) {
@@ -209,8 +214,12 @@ export async function abrirPagamentoExtra(extra: string, consentimentos: Consent
         product_data: { name: String(k.descricao || 'Pagamento adicional').slice(0, 120), description: 'Pagamento adicional · IRS 2026' },
       },
     }],
+    ...(user.email ? { customer_email: user.email } : {}),
     metadata: { tentativa: k.id, tipo: 'extra' },
-    payment_intent_data: { metadata: { tentativa: k.id } },
+    payment_intent_data: {
+      description: `Pagamento adicional · ${String(k.descricao || '').slice(0, 200)}`,
+      metadata: { tentativa: k.id, tipo: 'extra' },
+    },
   }, { idempotencia: `irs-extra-${k.id}-${Date.now()}` });
   if (!criada.ok) return { ok: false, erro: 'Não foi possível abrir o pagamento. Nada foi cobrado. Tente outra vez.' };
 
@@ -263,6 +272,10 @@ export async function confirmarSessao(sessao: string) {
     provider_currency: s.currency || 'eur',
   });
   if (error) return { ok: false, erro: 'Não foi possível confirmar o pagamento.' };
+  if (pago) {
+    const { avisarPagamento } = await import('./avisos');
+    await avisarPagamento(tentativa);
+  }
 
   return {
     ok: true,

@@ -79,6 +79,10 @@ export async function POST(request: NextRequest) {
   });
   // Um 500 faz o Stripe repetir, que é o que se quer se a base falhou.
   if (error) return NextResponse.json({ erro: 'não liquidado' }, { status: 500 });
+  if (s.payment_status === 'paid') {
+    const { avisarPagamento } = await import('@/lib/avisos');
+    await avisarPagamento(s.client_reference_id);
+  }
 
   // Prova numa contestação: o que o Stripe disse, e quando.
   const { data: tentativa } = await adminClient().from('irs_checkouts')
