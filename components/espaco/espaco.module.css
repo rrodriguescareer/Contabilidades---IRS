@@ -567,11 +567,16 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
 
 /* -------------------------------------------------------------- mensagens */
 
+/* A conversa ocupa o espaço todo do painel: a largura inteira e a altura do
+   ecrã menos o topo, com a lista a crescer e a caixa de escrita sempre à vista. */
 .chat {
   gap: 0;
   padding: 0;
   overflow: hidden;
-  max-inline-size: 52rem;
+  display: flex;
+  flex-direction: column;
+  block-size: calc(100dvh - 9.5rem);
+  min-block-size: 26rem;
 }
 .chatTopo {
   display: flex;
@@ -586,7 +591,8 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
   display: grid;
   align-content: start;
   gap: var(--e-4);
-  block-size: min(58vh, 34rem);
+  flex: 1 1 auto;
+  min-block-size: 0;
   overflow-y: auto;
   padding: var(--e-5);
   background: var(--superficie-2);
@@ -618,7 +624,7 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
   justify-self: start;
   display: grid;
   gap: .2rem;
-  max-inline-size: min(78%, 34rem);
+  max-inline-size: min(72%, 48rem);
   padding: .6rem .85rem;
   border-radius: 1rem 1rem 1rem .3rem;
   background: var(--superficie);
@@ -923,4 +929,9 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
   .inicio > * , .inicioPrincipal > *, .inicioLado > * { order: 2; }
   .destaque { order: 1; }
   .inicioUltimas { order: 3; }
+}
+
+@media (max-width: 900px) {
+  .chat { block-size: calc(100dvh - 10.5rem); min-block-size: 22rem; }
+  .balao { max-inline-size: 88%; }
 }
