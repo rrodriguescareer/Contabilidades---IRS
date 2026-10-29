@@ -90,7 +90,7 @@ export function Mensagens({
   return (
     <section className={`${e.cartao} ${e.chat}`}>
       <header className={e.chatTopo}>
-        <span className={e.avatar}>RR</span>
+        <img src="/ruben-rodrigues.webp" alt="Rúben Meirinho Rodrigues" width={96} height={96} className={e.avatar} />
         <div>
           <strong>Rúben Meirinho Rodrigues</strong>
           <span>Contabilista Certificado · responde normalmente no mesmo dia útil</span>
@@ -101,7 +101,7 @@ export function Mensagens({
         {mensagens.length === 0 && (
           <div className={e.chatVazio}>
             <strong>Ainda não há mensagens.</strong>
-            <span>Pergunte o que precisar sobre o seu IRS — respondo aqui, e fica tudo registado no processo.</span>
+            <span>Coloque aqui qualquer questão sobre o seu IRS. A resposta do contabilista fica registada no processo.</span>
           </div>
         )}
         {grupos.map((g) => (

@@ -21,12 +21,12 @@ const SEPARADORES = ['inicio', 'agregado', 'rendimentos', 'documentos', 'progres
 export type Vista = (typeof SEPARADORES)[number];
 
 const SUBTITULOS: Record<Vista, string> = {
-  inicio: 'Onde está o seu processo e o que falta.',
-  agregado: 'Quem entra na declaração, com a senha do Portal das Finanças de cada um.',
-  rendimentos: 'Um separador por tipo de rendimento, e as deduções no fim.',
-  documentos: 'Tudo o que enviou, e quando é que eu abri cada documento.',
-  progresso: 'Cada passo do processo, com data.',
-  pagamento: 'O preço, discriminado, e o pagamento — que também submete o processo.',
+  inicio: 'A etapa do processo e o que falta da sua parte.',
+  agregado: 'Quem entra na declaração, com a senha do Portal das Finanças de cada pessoa.',
+  rendimentos: 'Um separador por tipo de rendimento, com os respetivos documentos.',
+  documentos: 'Todos os documentos enviados e quando foram abertos pelo contabilista.',
+  progresso: 'As etapas do processo e o histórico de cada movimento.',
+  pagamento: 'O preço discriminado e o pagamento da preparação.',
   mensagens: 'Fale comigo diretamente.',
 };
 
@@ -119,6 +119,12 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
     ir(vista, true);
   }, [ir, vista]);
 
+  // No telemóvel o menu é uma faixa que desliza: o separador atual fica à vista.
+  useEffect(() => {
+    if (window.innerWidth > 900) return;
+    document.querySelector(`.${e.menu} [aria-current="true"]`)?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }, [vista]);
+
   // O endereço acompanha o separador, para o botão de recuar funcionar e para
   // a ligação poder ser guardada — mas sem recarregar a página.
   useEffect(() => {
@@ -153,7 +159,7 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
         {/* Quem está em baixo não é o cliente — é quem trata do processo
             dele. Saber a quem ligar vale mais do que ver o próprio nome. */}
         <div className={e.contabilista}>
-          <span className={e.avatar}>RR</span>
+          <img src="/ruben-rodrigues.webp" alt="Rúben Meirinho Rodrigues" width={96} height={96} className={e.avatar} />
           <div>
             <strong>Rúben Meirinho Rodrigues</strong>
             <span>Contabilista Certificado · Cédula 145854</span>

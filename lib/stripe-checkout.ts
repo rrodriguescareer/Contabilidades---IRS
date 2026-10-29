@@ -163,6 +163,71 @@ export async function desistirDoPagamento(tentativa: string) {
   return { ok: true };
 }
 
+/** Um pagamento adicional pedido pelo gabinete. O valor e a descrição vêm do
+    pedido (não do orçamento); o resto é igual ao pagamento da preparação. */
+export async function abrirPagamentoExtra(extra: string, consentimentos: Consentimentos): Promise<Abertura> {
+  const { client, user } = await session();
+  if (!uuid(extra)) return { ok: false, erro: 'Pagamento inválido.' };
+  if (!consentimentos?.termos) return { ok: false, erro: 'Para pagar, aceite os Termos e Condições.' };
+  const origem = siteUrl();
+  if (!origem) return { ok: false, erro: 'O pagamento está temporariamente indisponível.' };
+
+  const { data: k, error } = await client.rpc('iniciar_pagamento_extra', { p_checkout: extra });
+  if (error || !k) return { ok: false, erro: error?.code === '22023' ? error.message : 'Não foi possível abrir o pagamento.' };
+  if (k.state === 'paid') return { ok: true, modo: 'pago' };
+  const chave = chavePublicavel();
+
+  if (k.sessao) {
+    const lida = await stripe<Sessao>(`/checkout/sessions/${k.sessao}`);
+    if (lida.ok && lida.dados.status === 'open') {
+      if (chave && lida.dados.client_secret) return { ok: true, modo: 'embebido', chave, segredo: lida.dados.client_secret, tentativa: k.id };
+      if (lida.dados.url) return { ok: true, modo: 'alojado', url: lida.dados.url };
+    }
+    if (lida.ok && lida.dados.status === 'complete') {
+      await confirmarSessao(lida.dados.id);
+      return { ok: false, erro: 'Este pagamento já foi concluído. A confirmação pode levar uns minutos (Multibanco).' };
+    }
+    // Sessão expirada: o pedido do gabinete continua de pé, com sessão nova.
+    await adminClient().from('irs_checkouts').update({ state: 'creating', provider_order_id: null, checkout_url: null })
+      .eq('id', k.id).eq('tipo', 'extra');
+  }
+
+  const criada = await stripe<Sessao>('/checkout/sessions', {
+    mode: 'payment',
+    ...(chave
+      ? { ui_mode: 'embedded_page', return_url: `${origem}/pagamento?sessao={CHECKOUT_SESSION_ID}` }
+      : { success_url: `${origem}/pagamento?sessao={CHECKOUT_SESSION_ID}`, cancel_url: `${origem}/app?separador=pagamento` }),
+    currency: 'eur',
+    locale: 'pt',
+    client_reference_id: k.id,
+    expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
+    line_items: [{
+      quantity: 1,
+      price_data: {
+        currency: 'eur',
+        unit_amount: k.amount_cents,
+        product_data: { name: String(k.descricao || 'Pagamento adicional').slice(0, 120), description: 'Pagamento adicional · IRS 2026' },
+      },
+    }],
+    metadata: { tentativa: k.id, tipo: 'extra' },
+    payment_intent_data: { metadata: { tentativa: k.id } },
+  }, { idempotencia: `irs-extra-${k.id}-${Date.now()}` });
+  if (!criada.ok) return { ok: false, erro: 'Não foi possível abrir o pagamento. Nada foi cobrado. Tente outra vez.' };
+
+  const { error: semLigar } = await adminClient().rpc('anexar_sessao_de_pagamento', {
+    attempt: k.id, provider_id: criada.dados.id, provider_url: criada.dados.url || '',
+  });
+  if (semLigar) return { ok: false, erro: 'Não foi possível abrir o pagamento. Nada foi cobrado.' };
+  const { registar } = await import('./atividade');
+  await registar(user.id, 'pagamento_iniciado',
+    `Pagamento adicional · ${(k.amount_cents / 100).toFixed(2).replace('.', ',')} € · sessão Stripe ${criada.dados.id}`
+      + ` · aceitou os Termos e Condições e a Política de Privacidade (versão ${LEGAL_VERSION})`);
+
+  if (chave && criada.dados.client_secret) return { ok: true, modo: 'embebido', chave, segredo: criada.dados.client_secret, tentativa: k.id };
+  if (criada.dados.url) return { ok: true, modo: 'alojado', url: criada.dados.url };
+  return { ok: false, erro: 'Não foi possível abrir o pagamento. Nada foi cobrado.' };
+}
+
 function traduzir(mensagem?: string) {
   if (!mensagem) return 'Não foi possível iniciar o pagamento.';
   if (mensagem.includes('Incomplete case')) return 'Falta completar o processo antes de pagar.';

@@ -121,6 +121,9 @@
   letter-spacing: .02em;
 }
 .avatar { inline-size: 2.4rem; block-size: 2.4rem; font-size: .78rem; }
+/* A fotografia do contabilista no lugar das iniciais. */
+img.avatar, img.avatarPequeno { object-fit: cover; background: #1d3458; box-shadow: 0 0 0 2px rgb(255 255 255 / .18); }
+img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
 .avatarPequeno { inline-size: 2rem; block-size: 2rem; font-size: .7rem; }
 
 /* ------------------------------------------------------------------ topo */
@@ -168,8 +171,9 @@
   gap: var(--e-5);
   align-content: start;
   inline-size: 100%;
-  max-inline-size: 72rem;
-  padding: var(--e-5) var(--e-6) var(--e-8);
+  /* Ocupa o ecrã todo. Em monitores grandes as caixas passam a colunas em vez
+     de deixarem uma faixa vazia à direita. */
+  padding: var(--e-5) clamp(var(--e-4), 2.5vw, var(--e-8)) var(--e-8);
   transition: opacity .15s ease;
 }
 .painel[data-ocupado='true'] { opacity: .6; }
@@ -237,7 +241,20 @@
 
 /* ------------------------------------------------------------------ início */
 
-.inicio { display: grid; gap: var(--e-5); }
+.inicio { display: grid; gap: var(--e-5); align-items: start; }
+.inicioPrincipal, .inicioLado { display: grid; gap: var(--e-5); min-inline-size: 0; }
+/* Em ecrãs largos, o que falta e as mensagens passam a uma coluna ao lado. */
+@media (min-width: 1180px) {
+  .inicio { grid-template-columns: minmax(0, 1fr) minmax(20rem, 27rem); }
+  .inicioLado { position: sticky; inset-block-start: 5.5rem; }
+}
+.etapaRotulo {
+  font-size: var(--t-xs);
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--acao-forte);
+}
 .destaque {
   gap: var(--e-3);
   padding: var(--e-6);
@@ -252,8 +269,8 @@
   margin: var(--e-3) 0 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--e-2);
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--e-3);
 }
 .fasesInicio li { display: grid; gap: .45rem; font-size: var(--t-sm); color: var(--texto-suave); }
 .fasesInicio span { display: block; block-size: .35rem; border-radius: 999px; background: var(--linha); }
@@ -709,6 +726,28 @@
   font-weight: 650;
 }
 .botaoTexto:hover { text-decoration: underline; }
+.botaoApagar {
+  padding: .35rem .25rem;
+  border: 0;
+  background: none;
+  color: var(--critico, #b4332f);
+  font: inherit;
+  font-size: var(--t-xs);
+  font-weight: 650;
+  cursor: pointer;
+}
+.botaoApagar:hover { text-decoration: underline; }
+.botaoApagar:disabled { opacity: .6; cursor: progress; }
+.obrigatorio {
+  padding: .18rem .55rem;
+  border-radius: 999px;
+  background: var(--atencao-suave, #fdf1dc);
+  color: #7a4d05;
+  font-size: .7rem;
+  font-weight: 700;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
 @media (max-width: 560px) {
   .documentos li { grid-template-columns: auto minmax(0, 1fr); }
   .ladoDocumento { grid-column: 1 / -1; justify-content: flex-start; padding-inline-start: 3.1rem; }
@@ -765,10 +804,134 @@
   .topo { position: static; flex-wrap: wrap; padding: var(--e-4); }
   .painel { padding: var(--e-4) var(--e-4) var(--e-7); }
   .numeros { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .fasesInicio { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .fasesInicio { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: .4rem; }
+  .fasesInicio strong { font-size: .68rem; line-height: 1.2; }
   .passosPagamento li { padding: .5rem; gap: .4rem; font-size: .7rem; line-height: 1.2; }
   .destaque { padding: var(--e-5); }
 }
 
 /* Um botão solto num cartão não estica a toda a largura. */
 .cartao > :global(.btn) { justify-self: start; }
+
+
+/* ------------------------------------------------------ acompanhamento */
+
+.acompanhamento { display: grid; gap: var(--e-5); align-items: start; }
+@media (min-width: 1180px) {
+  .acompanhamento { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .acompanhamento > :nth-child(1), .acompanhamento > :nth-child(2) { grid-column: 1 / -1; }
+}
+.estadoAtual { gap: var(--e-3); background: radial-gradient(120% 140% at 100% 0%, #e9f0ff 0%, var(--superficie) 55%); }
+.estadoAtual h2 { font-size: var(--t-2xl) !important; letter-spacing: -.04em !important; }
+.estadoTopo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-3); }
+.estadoNota { margin: 0; max-inline-size: 48rem; color: var(--texto); }
+.resultado {
+  display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: var(--e-3);
+  padding: var(--e-4); border-radius: .8rem;
+  background: var(--positivo-suave, #e6f6ef); color: #0a5c47;
+}
+.resultado[data-sentido='payment'] { background: var(--atencao-suave, #fdf1dc); color: #7a4d05; }
+.resultado span { font-weight: 650; }
+.resultado strong { font-size: var(--t-xl); letter-spacing: -.03em; }
+
+/* As cinco etapas: em linha no computador, em coluna no telemóvel. */
+.etapas {
+  list-style: none; margin: 0; padding: 0;
+  display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--e-3);
+  counter-reset: etapa;
+}
+.etapas li {
+  position: relative;
+  display: grid; grid-template-columns: auto minmax(0, 1fr); gap: .7rem; align-items: start;
+  padding: var(--e-3) var(--e-3) var(--e-4);
+  border-radius: .8rem;
+  border: 1px solid var(--linha);
+  background: var(--superficie);
+}
+.etapas li[data-estado='atual'] { border-color: var(--acao); background: var(--acao-suave); }
+.etapas li[data-estado='atual'][data-desvio='true'] { border-color: #e0a33a; background: var(--atencao-suave, #fdf1dc); }
+.etapas li div { display: grid; gap: .2rem; min-inline-size: 0; }
+.etapas strong { font-size: var(--t-sm); }
+.etapas span:not(.etapaMarca) { font-size: var(--t-xs); color: var(--texto-suave); line-height: 1.35; }
+.etapas li[data-estado='atual'] span:not(.etapaMarca) { color: var(--acao-forte); font-weight: 650; }
+.etapaMarca {
+  display: grid; place-items: center;
+  inline-size: 1.7rem; block-size: 1.7rem; border-radius: 999px;
+  border: 2px solid var(--linha-forte); background: var(--superficie);
+  font-size: .75rem; font-weight: 750; color: var(--texto-suave);
+}
+.etapas li[data-estado='feito'] .etapaMarca { border-color: var(--acao); background: var(--acao); color: #fff; }
+.etapas li[data-estado='atual'] .etapaMarca { border-color: var(--acao); color: var(--acao-forte); box-shadow: 0 0 0 4px rgb(40 103 248 / .15); }
+
+.historico { list-style: none; margin: 0; padding: 0; display: grid; }
+.historico li {
+  display: grid; gap: .2rem;
+  padding: .85rem 0 .85rem 1.1rem;
+  border-inline-start: 2px solid var(--linha);
+  position: relative;
+}
+.historico li::before {
+  content: ''; position: absolute; inset-inline-start: -6px; inset-block-start: 1.1rem;
+  inline-size: 10px; block-size: 10px; border-radius: 999px; background: var(--acao);
+}
+.historico li:first-child::before { box-shadow: 0 0 0 4px rgb(40 103 248 / .18); }
+.historico li[data-tom='desvio']::before { background: #e0a33a; }
+.historico time { font-size: var(--t-xs); color: var(--texto-suave); }
+.historico strong { font-size: var(--t-sm); }
+.historico p { margin: 0; font-size: var(--t-sm); color: var(--texto-suave); }
+
+@media (max-width: 900px) {
+  .etapas { grid-template-columns: 1fr; gap: 0; }
+  .etapas li { border: 0; border-radius: 0; background: none; padding: .55rem 0; }
+  .etapas li[data-estado='atual'], .etapas li[data-estado='atual'][data-desvio='true'] { background: none; }
+  .etapas li:not(:last-child)::after {
+    content: ''; position: absolute; inset-inline-start: .83rem; inset-block-start: 2.45rem; inset-block-end: -.35rem;
+    inline-size: 2px; background: var(--linha);
+  }
+  .etapas li[data-estado='feito']:not(:last-child)::after { background: var(--acao); }
+  .estadoAtual h2, .destaque h2 { font-size: var(--t-xl) !important; }
+}
+/* No telemóvel saem as caixas de números (repetem o menu) e as notas longas
+   das etapas da página inicial. */
+@media (max-width: 560px) {
+  .numeros { display: none; }
+  .fasesInicio { gap: .3rem; }
+  .fasesInicio strong { font-size: .62rem; }
+  .destaque { padding: var(--e-5) var(--e-4); }
+}
+
+/* O topo no telemóvel: o título e as ações numa linha, sem o subtítulo. */
+@media (max-width: 560px) {
+  .tituloTopo p { display: none; }
+  .tituloTopo h1 { font-size: var(--t-lg); }
+  .topo { padding: var(--e-3) var(--e-4); gap: var(--e-2); }
+  .acoesTopo { gap: .35rem; }
+  .lingua, .botaoTopo { padding: .35rem .6rem; font-size: var(--t-xs); }
+  .painel { gap: var(--e-4); padding-block-start: var(--e-4); }
+  .cartao { padding: var(--e-4); }
+}
+
+/* Pagamentos adicionais e reembolsos, no topo do separador Pagamento. */
+.adicionais { border-color: var(--acao); }
+.listaAdicionais { list-style: none; margin: 0; padding: 0; display: grid; }
+.listaAdicionais li {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--e-3); align-items: center;
+  padding: .8rem 0; border-block-start: 1px solid var(--linha);
+}
+.listaAdicionais li:first-child { border-block-start: 0; }
+.listaAdicionais li div { display: grid; gap: .15rem; min-inline-size: 0; }
+.listaAdicionais li div span { font-size: var(--t-xs); color: var(--texto-suave); }
+.listaAdicionais li[data-reembolso='true'] > strong { color: #0a5c47; }
+@media (max-width: 560px) {
+  .listaAdicionais li { grid-template-columns: minmax(0, 1fr) auto; }
+  .listaAdicionais li .btn { grid-column: 1 / -1; }
+}
+
+/* No telemóvel e no tablet, o que falta da parte do cliente vem logo a seguir
+   ao passo seguinte; as últimas atualizações ficam para o fim. */
+@media (max-width: 1179px) {
+  .inicioPrincipal, .inicioLado { display: contents; }
+  .inicio > * , .inicioPrincipal > *, .inicioLado > * { order: 2; }
+  .destaque { order: 1; }
+  .inicioUltimas { order: 3; }
+}

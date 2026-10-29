@@ -81,7 +81,7 @@ const PASSOS: Passo[] = [
   },
   {
     titulo: 'O contabilista revê, peça a peça',
-    texto: 'Recebo o processo, verifico tudo e digo-lhe exatamente o que falta. Fala comigo dentro da plataforma, sem emails perdidos.',
+    texto: 'Recebo o processo, verifico tudo e digo-lhe exatamente o que falta. Fale comigo dentro da plataforma, sem emails perdidos.',
     pontos: ['Estado do processo sempre visível', 'Mensagens diretas comigo, com histórico', 'Pedidos de elementos em falta, item a item'],
     visor: (
       <div className={e.visorPainel}>

@@ -24,7 +24,7 @@ export default async function AreaCliente({ searchParams }: Props) {
       <main id="principal" className="envolve" style={{ paddingBlock: 'var(--e-8)', display: 'grid', gap: 'var(--e-4)', maxWidth: '44rem' }}>
         <h1>Ainda não tem um processo aberto</h1>
         <p className="suave">
-          A sua conta está ativa, mas não existe nenhum processo de IRS 2026 associado. Escreva-me e eu abro-o.
+          A sua conta está ativa, mas não existe nenhum processo de IRS 2026 associado. Contacte o contabilista para que o processo seja aberto.
         </p>
         <Link href="/perfil" className="btn btn-secundario" style={{ justifySelf: 'start' }}>
           Ver a minha conta

@@ -1,6 +1,6 @@
 'use client';
 import { useCallback, useEffect, useState, useTransition } from 'react';
-import { abrirPagamento, desistirDoPagamento, type Abertura } from '@/lib/stripe-checkout';
+import { abrirPagamento, abrirPagamentoExtra, desistirDoPagamento, type Abertura } from '@/lib/stripe-checkout';
 import { PagarEmbebido } from '@/components/pagar-embebido';
 import { orcamento, submeterProcesso } from '@/lib/acoes-espaco';
 import { emitirFaturaDoMeuProcesso } from '@/lib/acoes-cegid';
@@ -87,9 +87,20 @@ export function Pagamento({
     if (!pago && faltas.length === 0) recalcular('');
   }, [pago, faltas.length, recalcular]);
 
+  const extras = (dados.extras as Extra[]) || [];
+  const reembolsos = (dados.reembolsos as { total: number; motivo: string; em: string }[]) || [];
+  const adicionais = (extras.length > 0 || reembolsos.length > 0) && (
+    <Adicionais extras={extras} reembolsos={reembolsos} />
+  );
+
   if (pago && checkout) {
-    return <Recibo checkout={checkout} estado={proc?.estado || ''} processo={processo}
-                   ir={ir} aoMudar={aoMudar} teste={teste} />;
+    return (
+      <>
+        {adicionais}
+        <Recibo checkout={checkout} estado={proc?.estado || ''} processo={processo}
+                ir={ir} aoMudar={aoMudar} teste={teste} />
+      </>
+    );
   }
 
   const total = preco?.total_cents ?? 0;
@@ -107,6 +118,7 @@ export function Pagamento({
 
   return (
     <div className={e.pagamento}>
+      {adicionais}
       <ol className={e.passosPagamento}>
         {passos.map((p, i) => (
           <li key={p.titulo} data-estado={p.estado}><span>{i + 1}</span>{p.titulo}</li>
@@ -278,9 +290,9 @@ function CaixaPagar({ conta, processo, cupao, total, pronto, faltas, recolha, ab
           Tem um pagamento por concluir. Continue-o — não é criado um segundo — ou cancele-o para alterar dados.
         </p>
       ) : recolha ? (
-        <p className="suave">Ao pagar, o processo entra na minha fila e a recolha fecha. A declaração só é entregue na AT depois de eu a rever.</p>
+        <p className="suave">Ao pagar, o processo é submetido para revisão e a recolha fecha. A declaração só é entregue na AT depois de revista pelo contabilista.</p>
       ) : (
-        <p className="suave">O processo já está na minha fila. Pode pagar agora: a fatura-recibo é emitida em seu nome e enviada para o seu email.</p>
+        <p className="suave">O processo já está em revisão. Pode pagar agora: a fatura-recibo é emitida em seu nome e enviada para o seu email.</p>
       )}
 
       <ul className={e.metodos} aria-label="Métodos de pagamento aceites">
@@ -418,6 +430,80 @@ function Ensaio({ processo }: { processo: string }) {
         </button>
       </div>
       {estado.texto && <p className={estado.ok ? 'aviso-positivo' : 'aviso-critico'}>{estado.texto}</p>}
+    </section>
+  );
+}
+
+type Extra = { id: string; estado: string; total: number; descricao: string | null; pedido_em: string; pago_em: string | null };
+
+/* Os pagamentos adicionais que o contabilista pediu, e os reembolsos feitos.
+   Cada pedido paga-se aqui, no mesmo formulário seguro da preparação. */
+function Adicionais({ extras, reembolsos }: { extras: Extra[]; reembolsos: { total: number; motivo: string; em: string }[] }) {
+  const [aceite, setAceite] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
+  const [embebido, setEmbebido] = useState<{ extra: string; chave: string; segredo: string } | null>(null);
+  const [aAbrir, abrir] = useTransition();
+  const porPagar = extras.filter((x) => x.estado !== 'paid');
+
+  const pagar = (extra: string) =>
+    abrir(async () => {
+      setErro(null);
+      const r = await abrirPagamentoExtra(extra, { dados: true, termos: aceite });
+      if (!r.ok) { setErro(r.erro); return; }
+      if (r.modo === 'pago') { window.location.reload(); return; }
+      if (r.modo === 'alojado') { window.location.assign(r.url); return; }
+      setEmbebido({ extra, chave: r.chave, segredo: r.segredo });
+    });
+
+  return (
+    <section className={`${e.cartao} ${e.adicionais}`}>
+      <h3 className={e.tituloCartao}>{porPagar.length > 0 ? 'Pagamento adicional pedido' : 'Pagamentos adicionais e reembolsos'}</h3>
+      {extras.length > 0 && (
+        <ul className={e.listaAdicionais}>
+          {extras.map((x) => (
+            <li key={x.id}>
+              <div>
+                <strong>{x.descricao || 'Pagamento adicional'}</strong>
+                <span>{x.estado === 'paid' && x.pago_em ? `Pago a ${dataHora(x.pago_em)}` : `Pedido a ${dataHora(x.pedido_em)}`}</span>
+              </div>
+              <strong>{euros(x.total)}</strong>
+              {x.estado !== 'paid' && embebido?.extra !== x.id && (
+                <button type="button" className="btn" disabled={!aceite || aAbrir} onClick={() => pagar(x.id)}>
+                  {aAbrir ? 'A abrir…' : x.estado === 'pending' ? 'Continuar o pagamento' : `Pagar ${euros(x.total)}`}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      {porPagar.length > 0 && !embebido && (
+        <label className={e.consentimento}>
+          <input type="checkbox" checked={aceite} onChange={(ev) => setAceite(ev.target.checked)} />
+          <span>
+            Aceito o valor indicado, os <a href="/termos" target="_blank" rel="noopener">Termos e Condições</a> e a{' '}
+            <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.
+          </span>
+        </label>
+      )}
+      {erro && <p className="aviso-critico">{erro}</p>}
+      {embebido && (
+        <div className={e.checkout}>
+          <PagarEmbebido chave={embebido.chave} segredo={embebido.segredo} />
+        </div>
+      )}
+      {reembolsos.length > 0 && (
+        <ul className={e.listaAdicionais}>
+          {reembolsos.map((r, i) => (
+            <li key={i} data-reembolso="true">
+              <div>
+                <strong>Reembolso</strong>
+                <span>{dataHora(r.em)} · {r.motivo}</span>
+              </div>
+              <strong>−{euros(r.total)}</strong>
+            </li>
+          ))}
+        </ul>
+      )}
     </section>
   );
 }

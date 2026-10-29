@@ -1,6 +1,7 @@
 'use client';
-import { useActionState, useEffect, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
 import { enviarDocumento } from '@/lib/acoes';
+import { apagarDocumento } from '@/lib/acoes-espaco';
 import type { Dados } from './espaco';
 import e from './espaco.module.css';
 
@@ -25,10 +26,32 @@ const dataHora = (iso: string) =>
 const tamanho = (b: number) =>
   b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
 
-/** A lista de documentos: o que é, quando foi enviado e se eu já o abri. */
-export function ListaDocumentos({ documentos, vazio }: { documentos: Documento[]; vazio: string }) {
+/** A lista de documentos: o que é, quando foi enviado e se já foi aberto pelo
+    contabilista. Com o processo em preparação, cada um pode ser apagado. */
+export function ListaDocumentos({ documentos, vazio, processo, aberto = false, aoMudar }: {
+  documentos: Documento[]; vazio: string; processo?: string; aberto?: boolean; aoMudar?: () => void;
+}) {
+  const [aApagar, apagar] = useTransition();
+  const [qual, setQual] = useState<string | null>(null);
+  const [erro, setErro] = useState<string | null>(null);
+  const podeApagar = Boolean(aberto && processo && aoMudar);
+
+  const remover = (d: Documento) => {
+    if (!processo || !aoMudar) return;
+    if (!window.confirm(`Apagar "${d.descricao || d.nome}"? O ficheiro é eliminado e não pode ser recuperado.`)) return;
+    setErro(null); setQual(d.id);
+    apagar(async () => {
+      const r = await apagarDocumento(processo, d.id);
+      setQual(null);
+      if (!r.ok) { setErro(r.erro || 'Não foi possível apagar o documento.'); return; }
+      aoMudar();
+    });
+  };
+
   if (documentos.length === 0) return <div className={e.vazio}>{vazio}</div>;
   return (
+    <>
+    {erro && <p className="aviso-critico">{erro}</p>}
     <ul className={e.documentos}>
       {documentos.map((d) => {
         const aberto = d.descargas && d.descargas.length > 0;
@@ -48,17 +71,24 @@ export function ListaDocumentos({ documentos, vazio }: { documentos: Documento[]
               ) : d.descargas !== undefined && (
                 <span className={e.estadoDocumento} data-aberto={aberto}
                       title={aberto ? d.descargas.map(dataHora).join('\n') : undefined}>
-                  {aberto ? `Aberto por mim a ${dataHora(d.descargas[0])}` : 'Ainda não aberto'}
+                  {aberto ? `Aberto pelo contabilista a ${dataHora(d.descargas[0])}` : 'Ainda não aberto'}
                 </span>
               )}
               {/* Ligações normais: o navegador mostra o PDF ou a imagem num separador novo. */}
               <a className={e.botaoLinha} href={`/app/documento/${d.id}`} target="_blank" rel="noopener">Abrir</a>
               <a className={e.botaoTexto} href={`/app/documento/${d.id}?descarregar`} download>Descarregar</a>
+              {podeApagar && (
+                <button type="button" className={e.botaoApagar} disabled={aApagar}
+                        onClick={() => remover(d)} aria-label={`Apagar ${d.descricao || d.nome}`}>
+                  {aApagar && qual === d.id ? 'A apagar…' : 'Apagar'}
+                </button>
+              )}
             </div>
           </li>
         );
       })}
     </ul>
+    </>
   );
 }
 
@@ -188,10 +218,10 @@ export function Documentos({
         <div className="linha-entre">
           <h2>Todos os documentos</h2>
           {documentos.length > 0 && (
-            <span className="suave">{documentos.length} enviados · {abertos} abertos por mim</span>
+            <span className="suave">{documentos.length} enviados · {abertos} abertos pelo contabilista</span>
           )}
         </div>
-        <ListaDocumentos documentos={documentos}
+        <ListaDocumentos documentos={documentos} processo={processo} aberto={aberto} aoMudar={aoMudar}
                          vazio="Ainda não enviou documentos. Pode enviá-los aqui ou em cada separador de rendimentos." />
       </section>
 

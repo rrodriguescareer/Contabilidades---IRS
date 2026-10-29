@@ -165,7 +165,7 @@ export function Configurador({ olho, titulo, texto }: PropsConfigurador) {
             <Interruptor
               ligado={escolhas.trabalho}
               aoMudar={(v) => mudar('trabalho', v)}
-              titulo="Trabalho dependente"
+              titulo="Trabalho Dependente"
               nota="Vencimentos, categoria A"
             />
             <Interruptor
@@ -177,13 +177,13 @@ export function Configurador({ olho, titulo, texto }: PropsConfigurador) {
             <Interruptor
               ligado={escolhas.independente}
               aoMudar={(v) => mudar('independente', v)}
-              titulo="Recibos verdes"
+              titulo="Independente (Vendas e Recibos Verdes)"
               nota="Trabalho independente, categoria B"
             />
             <Interruptor
               ligado={escolhas.acoes}
               aoMudar={(v) => mudar('acoes', v)}
-              titulo="Ações e outros títulos"
+              titulo="Mais-Valias (Ações e Outros)"
               nota="Mais-valias mobiliárias, categoria G"
             />
           </div>

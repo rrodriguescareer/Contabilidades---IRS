@@ -145,9 +145,13 @@ function Aba({
       </section>
 
       <section className={e.cartao}>
-        <h2>Documentos</h2>
+        <div className="linha-entre">
+          <h2>Documentos</h2>
+          <span className={e.obrigatorio}>Obrigatório</span>
+        </div>
         <p className="suave">{separador.documentos.nota}</p>
         <ListaDocumentos documentos={documentos.filter((d) => d.categoria === separador.categoria)}
+                         processo={processo} aberto={aberto} aoMudar={aoMudar}
                          vazio="Ainda não enviou documentos neste separador." />
         <EnvioDocumento conta={conta} processo={processo} categoria={separador.categoria}
                         tipos={separador.documentos.tipos}
@@ -429,9 +433,13 @@ function Deducoes({
       </section>
 
       <section className={e.cartao}>
-        <h2>Documentos</h2>
+        <div className="linha-entre">
+          <h2>Documentos</h2>
+          <span className={e.obrigatorio}>Obrigatório</span>
+        </div>
         <p className="suave">{DEDUCOES.documentos.nota}</p>
         <ListaDocumentos documentos={((dados.documentos as Documento[]) || []).filter((d) => d.categoria === 'deduction')}
+                         processo={processo} aberto={aberto} aoMudar={aoMudar}
                          vazio="Ainda não enviou documentos das deduções." />
         <EnvioDocumento conta={conta} processo={processo} categoria="deduction"
                         tipos={DEDUCOES.documentos.tipos} aberto={aberto} aoEnviar={aoMudar} recolhido />

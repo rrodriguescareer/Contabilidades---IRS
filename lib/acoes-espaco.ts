@@ -289,6 +289,32 @@ export async function submeterProcesso(
   return { ok: true };
 }
 
+/** Apagar um documento enviado. A base só deixa com o processo em preparação
+    e dentro da própria conta; o ficheiro sai do Storage aqui, porque a base
+    não lhe chega — a não ser que outro documento use o mesmo ficheiro. */
+export async function apagarDocumento(processo: string, documento: string): Promise<Resposta> {
+  const { erro, cliente: eu } = await doProcesso(processo);
+  if (erro || !eu) return { ok: false, erro: erro || 'Sem acesso.' };
+  if (!/^[0-9a-f-]{36}$/i.test(documento)) return { ok: false, erro: 'Documento inválido.' };
+  const cliente = await supabase();
+  const { data: nome } = await cliente.from('documents').select('file_name').eq('id', documento).maybeSingle();
+  const { data: caminho, error } = await cliente.rpc('apagar_documento', { p_documento: documento });
+  if (error) {
+    return { ok: false, erro: error.code === '42501'
+      ? 'Este documento já não pode ser apagado: o processo foi submetido.'
+      : 'Não foi possível apagar o documento.' };
+  }
+  if (typeof caminho === 'string' && caminho) {
+    const { adminClient } = await import('./admin-client');
+    const { error: semFicheiro } = await adminClient().storage.from('irs-documents').remove([caminho]);
+    if (semFicheiro) console.error(JSON.stringify({ event: 'rr_ficheiro_por_apagar', documento, erro: semFicheiro.message }));
+  }
+  const { registar } = await import('./atividade');
+  await registar(eu, 'documento_apagado', nome?.file_name || null, processo);
+  revalidatePath('/app');
+  return { ok: true };
+}
+
 /** Uma mensagem do cliente para o gabinete. Direta (sem formulário de ação),
     para o ecrã a mostrar logo e só confirmar depois. */
 export async function enviarMensagemAoGabinete(processo: string, corpo: string): Promise<Resposta> {
