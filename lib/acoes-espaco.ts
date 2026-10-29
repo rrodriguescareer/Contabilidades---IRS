@@ -256,8 +256,8 @@ export async function orcamento(processo: string, cupao = '') {
 export async function submeterProcesso(
   processo: string, consentimentos?: { dados: boolean; termos: boolean },
 ): Promise<Resposta & { faltas?: string[] }> {
-  const { erro } = await doProcesso(processo);
-  if (erro) return { ok: false, erro };
+  const { erro, cliente: eu } = await doProcesso(processo);
+  if (erro || !eu) return { ok: false, erro: erro || 'Sem acesso.' };
   if (consentimentos && (!consentimentos.dados || !consentimentos.termos)) {
     return { ok: false, erro: 'Para submeter, confirme os dados e aceite os Termos e Condições.' };
   }
@@ -280,7 +280,7 @@ export async function submeterProcesso(
   if (consentimentos) {
     const { registar } = await import('./atividade');
     const { LEGAL_VERSION } = await import('./legal');
-    await registar(cliente, 'submissao_aceite',
+    await registar(eu, 'submissao_aceite',
       'Confirmou os dados, os documentos e o valor; aceitou os Termos e Condições e a Política de Privacidade'
         + ` (versão ${LEGAL_VERSION}) e o início do serviço antes de decorridos 14 dias. Pagamento a fazer depois.`,
       processo);

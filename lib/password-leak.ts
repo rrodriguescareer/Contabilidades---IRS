@@ -48,7 +48,7 @@ export async function senhaComprometida(senha: string): Promise<boolean> {
     return false;
   } catch {
     // Serviço em baixo ou lento: não se tranca ninguém à porta por isso.
-    // O mínimo de 12 caracteres continua a ser exigido.
+    // As regras da palavra-passe (8 caracteres, maiúscula, minúscula, número e símbolo) continuam a ser exigidas.
     return false;
   }
 }

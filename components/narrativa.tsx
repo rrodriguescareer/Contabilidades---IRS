@@ -103,7 +103,7 @@ const PASSOS: Passo[] = [
   },
   {
     titulo: 'Pague e eu submeto',
-    texto: 'O preço aparece rubrica a rubrica antes de pagar. Pagamento seguro por cartão, Apple Pay, Google Pay ou Revolut.',
+    texto: 'O preço aparece rubrica a rubrica antes de pagar. Pagamento seguro pela Stripe: cartão, MB WAY, Multibanco, Apple Pay ou Google Pay.',
     pontos: ['Sem surpresas: vê o cálculo completo antes de confirmar', 'Código de desconto, se tiver', 'Comprovativo de submissão guardado no processo'],
     visor: (
       <div className={e.visorPainel}>

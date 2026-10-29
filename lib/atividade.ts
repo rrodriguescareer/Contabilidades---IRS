@@ -1,6 +1,5 @@
 import 'server-only';
 import { headers } from 'next/headers';
-import type { SupabaseClient } from '@supabase/supabase-js';
 import { adminClient } from './admin-client';
 
 /* O registo de atividade: a prova numa contestação de pagamento. Guarda-se
@@ -18,13 +17,19 @@ async function origem() {
   }
 }
 
-/** Um passo do próprio utilizador, com a sessão dele. */
-export async function registar(cliente: SupabaseClient, tipo: string, detalhe?: string | null, processo?: string | null) {
+/** Um passo do próprio utilizador. Escreve só o servidor: o id vem da sessão
+    verificada de quem chama, e a base confirma que o processo é dessa conta.
+    O cliente não tem como escrever no registo diretamente. */
+export async function registar(utilizador: string, tipo: string, detalhe?: string | null, processo?: string | null) {
   const { ip, agente } = await origem();
-  const { error } = await cliente.rpc('registar_atividade', {
-    p_tipo: tipo, p_detalhe: detalhe ?? null, p_case: processo ?? null, p_ip: ip, p_agente: agente,
-  });
-  if (error) console.error(JSON.stringify({ event: 'rr_registo_falhou', tipo, erro: error.message }));
+  try {
+    const { error } = await adminClient().rpc('registar_atividade_de', {
+      p_user: utilizador, p_tipo: tipo, p_detalhe: detalhe ?? null, p_case: processo ?? null, p_ip: ip, p_agente: agente,
+    });
+    if (error) throw error;
+  } catch (falha) {
+    console.error(JSON.stringify({ event: 'rr_registo_falhou', tipo, erro: String((falha as Error)?.message || falha) }));
+  }
 }
 
 /** Um passo do sistema (webhook, integração) ou de alguém ainda sem sessão. */

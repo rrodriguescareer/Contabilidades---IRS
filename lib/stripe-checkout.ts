@@ -40,7 +40,7 @@ export type Consentimentos = { dados: boolean; termos: boolean };
 export async function abrirPagamento(
   conta: string, processo: string, cupao: string, esperado: number, consentimentos: Consentimentos,
 ): Promise<Abertura> {
-  const { client } = await session();
+  const { client, user } = await session();
   if (!uuid(conta) || !uuid(processo)) return { ok: false, erro: 'Selecione o processo.' };
   if (!consentimentos?.dados || !consentimentos?.termos) {
     return { ok: false, erro: 'Para pagar, confirme os dados e aceite os Termos e Condições.' };
@@ -133,7 +133,7 @@ export async function abrirPagamento(
   });
   if (!semLigar) {
     const { registar } = await import('./atividade');
-    await registar(client, 'pagamento_iniciado',
+    await registar(user.id, 'pagamento_iniciado',
       `${(tentativa.amount_cents / 100).toFixed(2).replace('.', ',')} € · sessão Stripe ${criada.dados.id}`
         + ' · confirmou os dados, os documentos e o valor; aceitou os Termos e Condições e a Política de'
         + ` Privacidade (versão ${LEGAL_VERSION}) e o início do serviço antes de decorridos 14 dias`, processo);

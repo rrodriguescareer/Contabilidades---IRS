@@ -19,13 +19,13 @@ export async function signIn(form:FormData){
  console.info(JSON.stringify({event:'rr_login_timing',stage:'password',ms:Math.round(performance.now()-started)}));
  if(failure||!auth.user)error(signInError(failure?.code));
  // Prova numa contestação: quem entrou, quando, de que IP e de que browser.
- {const {registar}=await import('./atividade');await registar(client,'login');}
+ {const {registar}=await import('./atividade');await registar(auth.user.id,'login');}
  // The protected destination verifies database permissions once using session().
  // Avoid a duplicate context lookup before and after this redirect.
  // Volta ao que o visitante tentou abrir, desde que seja um caminho desta
  // aplicação: '//exemplo.pt' sairia daqui para fora.
  const pedido=text(form,'destino');
- const interno=/^\/(?!\/)/.test(pedido)?pedido:'';
+ const interno=/^\/(?![\/\\])[^\\\s]*$/.test(pedido)?pedido:'';
  const {cookies}=await import('next/headers');const frasco=await cookies();
  // Marca a entrada para a transição de boas-vindas. Vive 30 segundos e não
  // leva nada de pessoal: é só um sinal para o ecrã seguinte.

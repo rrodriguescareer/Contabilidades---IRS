@@ -14,21 +14,21 @@ export const dynamic = 'force-dynamic';
  * A assinatura é verificada à mão, pela mesma razão que não há SDK: o
  * algoritmo é um HMAC e a tolerância de tempo é uma subtração. */
 function assinaturaValida(corpo: string, cabecalho: string, segredo: string) {
-  const partes = Object.fromEntries(
-    cabecalho.split(',').map((p) => p.split('=') as [string, string]),
-  );
-  const momento = Number(partes.t);
+  const partes = cabecalho.split(',').map((p) => {
+    const i = p.indexOf('=');
+    return [p.slice(0, i).trim(), p.slice(i + 1).trim()] as const;
+  });
+  const momento = Number(partes.find(([k]) => k === 't')?.[1]);
   if (!Number.isFinite(momento)) return false;
 
   // Cinco minutos: o que o Stripe recomenda contra repetição de pedidos.
   if (Math.abs(Date.now() / 1000 - momento) > 300) return false;
 
-  const esperada = createHmac('sha256', segredo)
-    .update(`${momento}.${corpo}`)
-    .digest('hex');
-  const recebida = partes.v1 || '';
-  if (recebida.length !== esperada.length) return false;
-  return timingSafeEqual(Buffer.from(recebida), Buffer.from(esperada));
+  const esperada = Buffer.from(createHmac('sha256', segredo).update(`${momento}.${corpo}`).digest('hex'));
+  // Ao rodar o segredo, o Stripe manda uma assinatura v1 por cada segredo
+  // ativo: basta que uma bata certo.
+  return partes.some(([k, v]) => k === 'v1' && v.length === esperada.length
+    && timingSafeEqual(Buffer.from(v), esperada));
 }
 
 export async function POST(request: NextRequest) {
