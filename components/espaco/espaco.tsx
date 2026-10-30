@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState, useTransition } from 'react';
 import { pedirVista } from '@/lib/acoes-espaco';
 import { signOut } from '@/lib/auth-actions';
 import { emRecolha } from '@/lib/fluxo';
+import { temPortalEmpresas } from '@/lib/outro-portal';
 import { Chegada } from '@/components/chegada';
 import { Idioma, usarIdioma } from './idioma';
 import { Inicio } from './inicio';
@@ -58,6 +59,9 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
   const [aCaminho, setACaminho] = useState<Vista | null>(null);
   const [erro, setErro] = useState<string | null>(null);
   const [estado, setEstado] = useState(estadoInicial);
+  // O botão para o portal Empresas só aparece a quem também o tem.
+  const [comEmpresas, setComEmpresas] = useState(false);
+  useEffect(() => { temPortalEmpresas().then(setComEmpresas).catch(() => {}); }, []);
   const [, comecar] = useTransition();
 
   /* O que já foi carregado fica guardado: voltar a um separador não repete o
@@ -170,6 +174,7 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
           </div>
         </div>
 
+        {comEmpresas && <PortalEmpresas className={e.outroPortal} />}
         <form action={signOut} className={e.sairForm}>
           <button type="submit" className={e.sair}>
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
@@ -191,6 +196,7 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
             <button type="button" className={e.lingua} onClick={trocar} aria-label="Language">
               {lingua === 'pt' ? 'EN' : 'PT'}
             </button>
+            {comEmpresas && <PortalEmpresas className={`${e.botaoTopo} ${e.soTelemovel}`} />}
             <Link href="/perfil" className={e.botaoTopo}>{t('conta')}</Link>
             <form action={signOut} className={e.sairTopo}>
               <button type="submit" className={e.botaoTopo}>{t('sair')}</button>
@@ -219,6 +225,27 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
         </main>
       </div>
     </div>
+  );
+}
+
+const EMPRESAS = (process.env.NEXT_PUBLIC_EMPRESAS_URL || 'https://portal.rr-contabilidade.com').replace(/\/$/, '');
+
+/** Passar para o portal Empresas com a mesma sessão, depois de uma
+    confirmação curta. */
+function PortalEmpresas({ className }: { className: string }) {
+  const caixa = useRef<HTMLDialogElement>(null);
+  return (
+    <>
+      <button type="button" className={className} onClick={() => caixa.current?.showModal()}>Portal Empresas</button>
+      <dialog ref={caixa} className={e.confirmar} aria-labelledby="confirmar-empresas">
+        <h2 id="confirmar-empresas">Mudar para o Portal Empresas?</h2>
+        <p>A sessão mantém-se: não precisa de voltar a entrar. Pode regressar ao IRS pelo botão «Portal IRS».</p>
+        <div className={e.confirmarAcoes}>
+          <button type="button" className="btn btn-secundario" onClick={() => caixa.current?.close()}>Ficar no IRS</button>
+          <a className="btn" href={`${EMPRESAS}/app`}>Mudar para o Portal Empresas</a>
+        </div>
+      </dialog>
+    </>
   );
 }
 

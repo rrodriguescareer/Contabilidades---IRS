@@ -935,3 +935,37 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
   .chat { block-size: calc(100dvh - 10.5rem); min-block-size: 22rem; }
   .balao { max-inline-size: 88%; }
 }
+
+/* ------------------------------------------------------- o outro portal */
+/* Quem também tem empresas passa para o portal Empresas sem nova entrada. */
+.outroPortal {
+  inline-size: 100%;
+  padding: .62rem 1rem;
+  border: 1px solid #2a4673;
+  border-radius: .7rem;
+  background: transparent;
+  color: #c6d6ee;
+  font: inherit;
+  font-size: .9rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+.outroPortal:hover { background: #15305a; color: #fff; border-color: #7fd1ff; }
+.soTelemovel { display: none; }
+@media (max-width: 900px) {
+  .outroPortal { display: none; }
+  .soTelemovel { display: inline-flex; }
+}
+.confirmar {
+  inline-size: min(26rem, calc(100vw - 2rem));
+  padding: var(--e-5);
+  border: 1px solid var(--linha);
+  border-radius: 1rem;
+  background: var(--superficie);
+  color: var(--texto);
+  box-shadow: var(--sombra-3);
+}
+.confirmar::backdrop { background: rgb(6 23 46 / .55); backdrop-filter: blur(2px); }
+.confirmar h2 { margin: 0 0 var(--e-2); font-size: var(--t-lg); }
+.confirmar p { margin: 0; color: var(--texto-suave); font-size: var(--t-sm); }
+.confirmarAcoes { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--e-2); margin-block-start: var(--e-4); }
