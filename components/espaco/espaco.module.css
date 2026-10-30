@@ -784,6 +784,8 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
 .zona[data-escolhido='true'] { border-style: solid; border-color: var(--positivo); background: var(--positivo-suave); color: #0a5c47; }
 .zona strong { color: var(--texto); }
 .ficheiroEscondido { position: absolute; inline-size: 1px; block-size: 1px; opacity: 0; pointer-events: none; }
+.progresso { block-size: .4rem; border-radius: 999px; background: var(--linha); overflow: hidden; }
+.progresso span { display: block; block-size: 100%; background: var(--acao); border-radius: inherit; transition: inline-size .2s ease; }
 .camposEnvio { display: grid; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); gap: var(--e-3); align-items: end; }
 
 /* ------------------------------------------------------------- pequeno */

@@ -1,6 +1,7 @@
 'use client';
-import { useActionState, useEffect, useRef, useState, useTransition } from 'react';
-import { enviarDocumento } from '@/lib/acoes';
+import { useEffect, useRef, useState, useTransition } from 'react';
+import { concluirEnvio, prepararDocumento, type Resultado } from '@/lib/acoes';
+import { carregar, preparar } from '@/lib/carregar';
 import { apagarDocumento } from '@/lib/acoes-espaco';
 import type { Dados } from './espaco';
 import e from './espaco.module.css';
@@ -100,13 +101,23 @@ export function EnvioDocumento({
   imoveis?: { id: string; nome: string }[]; rendimento?: string;
   aberto: boolean; aoEnviar: () => void; recolhido?: boolean;
 }) {
-  const [estado, accao, aEnviar] = useActionState(enviarDocumento, null);
+  const [estado, setEstado] = useState<Resultado | null>(null);
+  const [aEnviar, setAEnviar] = useState(false);
+  const [progresso, setProgresso] = useState<number | null>(null);
   const forma = useRef<HTMLFormElement>(null);
   const ficheiro = useRef<HTMLInputElement>(null);
   const [escolhido, setEscolhido] = useState<File | null>(null);
   const [porCima, setPorCima] = useState(false);
   const [visivel, setVisivel] = useState(!recolhido);
   const tratado = useRef<unknown>(null);
+
+  // A meio de um envio, sair da página perde-o: o browser pede confirmação.
+  useEffect(() => {
+    if (!aEnviar) return;
+    const aviso = (ev: BeforeUnloadEvent) => { ev.preventDefault(); ev.returnValue = ''; };
+    window.addEventListener('beforeunload', aviso);
+    return () => window.removeEventListener('beforeunload', aviso);
+  }, [aEnviar]);
 
   useEffect(() => {
     if (estado?.ok && tratado.current !== estado) {
@@ -128,6 +139,40 @@ export function EnvioDocumento({
     );
   }
 
+  /* O ficheiro vai do browser diretamente para o Storage (o Vercel recusa
+     pedidos com mais de 4,5 MB): otimizar aqui, registar no servidor,
+     carregar com o progresso e concluir. */
+  async function submeter(ev: React.FormEvent<HTMLFormElement>) {
+    ev.preventDefault();
+    const form = ev.currentTarget;
+    if (!escolhido || !form.reportValidity()) return;
+    const dados = new FormData(form);
+    setAEnviar(true);
+    setEstado(null);
+    try {
+      const pronto = await preparar(escolhido);
+      if ('erro' in pronto) return setEstado({ ok: false, erro: pronto.erro });
+      const lugar = await prepararDocumento({
+        conta, processo, rendimento, categoria, tipo: String(dados.get('tipo') || ''),
+        nome: pronto.nome, mime: pronto.mime, tamanho: pronto.blob.size, hash: pronto.hash,
+      });
+      if ('erro' in lugar) return setEstado({ ok: false, erro: lugar.erro });
+      if (lugar.url) {
+        setProgresso(0);
+        await carregar(lugar.url, pronto, setProgresso);
+      }
+      setEstado(await concluirEnvio({
+        id: lugar.id, categoria, imovel: String(dados.get('imovel') || ''), descricao: String(dados.get('descricao') || ''),
+        original: pronto.original, tamanho: pronto.blob.size, reaproveitado: lugar.reaproveitado,
+      }));
+    } catch {
+      setEstado({ ok: false, erro: 'O carregamento do ficheiro foi interrompido. Confirme a ligação e tente outra vez.' });
+    } finally {
+      setAEnviar(false);
+      setProgresso(null);
+    }
+  }
+
   const largar = (lista: FileList | null) => {
     const f = lista?.[0];
     if (!f || !ficheiro.current) return;
@@ -138,7 +183,7 @@ export function EnvioDocumento({
   };
 
   return (
-    <form ref={forma} action={accao} className={e.envio}>
+    <form ref={forma} onSubmit={submeter} className={e.envio}>
       <input type="hidden" name="conta" value={conta} />
       <input type="hidden" name="processo" value={processo} />
       <input type="hidden" name="categoria" value={categoria} />
@@ -148,7 +193,7 @@ export function EnvioDocumento({
              onDragOver={(ev) => { ev.preventDefault(); setPorCima(true); }}
              onDragLeave={() => setPorCima(false)}
              onDrop={(ev) => { ev.preventDefault(); setPorCima(false); largar(ev.dataTransfer.files); }}>
-        <input ref={ficheiro} type="file" name="ficheiro" accept="application/pdf,image/jpeg,image/png" required
+        <input ref={ficheiro} type="file" name="ficheiro" accept="application/pdf,image/jpeg,image/png,image/webp" required
                className={e.ficheiroEscondido} onChange={(ev) => setEscolhido(ev.target.files?.[0] || null)} />
         <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
              strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -191,12 +236,18 @@ export function EnvioDocumento({
         </label>
       </div>
 
+      {progresso != null && (
+        <div className={e.progresso} role="progressbar" aria-label="Progresso do envio"
+             aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(progresso * 100)}>
+          <span style={{ inlineSize: `${Math.round(progresso * 100)}%` }} />
+        </div>
+      )}
       {estado && !estado.ok && <p className="aviso-critico">{estado.erro}</p>}
       {estado?.ok && <p className="aviso-positivo">{estado.mensagem}</p>}
 
       <div className="acoes-membro">
         <button type="submit" className="btn" disabled={aEnviar || !escolhido}>
-          {aEnviar ? 'A enviar…' : 'Enviar documento'}
+          {aEnviar ? (progresso != null ? `A enviar… ${Math.round(progresso * 100)}%` : 'A preparar…') : 'Enviar documento'}
         </button>
         {recolhido && (
           <button type="button" className="btn-texto" onClick={() => setVisivel(false)}>Cancelar</button>
