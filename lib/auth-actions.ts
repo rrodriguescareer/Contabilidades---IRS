@@ -66,7 +66,7 @@ export async function signUp(form: FormData) {
   }
   redirect('/entrar?mensagem=Confirme%20o%20email%20para%20continuar.%20Depois%20poderá%20preencher%20os%20seus%20dados%20e%20preparar%20o%20IRS.');
 }
-export async function signOut() { const client=await supabase();await client.auth.signOut();redirect('/entrar'); }
+export async function signOut() { const client=await supabase();await client.auth.signOut({ scope: 'local' });redirect('/entrar'); }
 export async function recover(form: FormData) {
   if(process.env.AUTH_EMAIL_BRANDING_READY!=='true')error('A recuperação por email está temporariamente indisponível. Contacte o contabilista.','/recuperar');
   const origin=siteUrl();if (!origin) error('Falta configurar o endereço público da aplicação.','/recuperar');

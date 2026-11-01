@@ -5,6 +5,7 @@ import { pedirVista } from '@/lib/acoes-espaco';
 import { signOut } from '@/lib/auth-actions';
 import { emRecolha } from '@/lib/fluxo';
 import { temPortalEmpresas } from '@/lib/outro-portal';
+import { marcarVisto, novidadesDoProcesso, type Novidades } from '@/lib/novidades';
 import { Chegada } from '@/components/chegada';
 import { Idioma, usarIdioma } from './idioma';
 import { Inicio } from './inicio';
@@ -86,6 +87,21 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
   useEffect(() => setLida(lidaAte(processo)), [processo, vista]);
   const novaMensagem = Boolean(ultima && (!lida || ultima > lida)) && vista !== 'mensagens';
 
+  /* O que mudou desde a última visita: um número no separador. Abrir o
+     acompanhamento ou os pagamentos dá-os por vistos. */
+  const [novidades, setNovidades] = useState<Novidades>({});
+  useEffect(() => {
+    let vivo = true;
+    const ler = () => novidadesDoProcesso(processo).then((n) => { if (vivo) setNovidades(n); }).catch(() => {});
+    if (vista === 'progresso' || vista === 'pagamento') marcarVisto(vista, processo).then(ler).catch(() => {});
+    else ler();
+    return () => { vivo = false; };
+  }, [vista, processo]);
+  const contagem = (s: Vista) =>
+    s === 'progresso' && vista !== 'progresso' ? novidades.progresso || 0
+      : s === 'pagamento' && vista !== 'pagamento' ? novidades.pagamento || 0
+        : s === 'documentos' ? novidades.documentos || 0 : 0;
+
   /* Mudar de separador só troca o ecrã quando os dados chegam. Antes trocava
      logo, e durante um instante o separador novo desenhava-se com os dados do
      anterior. */
@@ -155,7 +171,10 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
                     onClick={() => ir(s)}>
               <Icone nome={s} />
               <span>{t(s)}</span>
-              {s === 'mensagens' && novaMensagem && <span className={e.ponto} aria-label="Mensagem nova" />}
+              {s === 'mensagens' && novaMensagem && <span className={e.contagem} aria-label="Mensagem nova">!</span>}
+              {contagem(s) > 0 && (
+                <span className={e.contagem} aria-label={`${contagem(s)} ${contagem(s) === 1 ? 'novidade' : 'novidades'}`}>{contagem(s)}</span>
+              )}
             </button>
           ))}
         </nav>
@@ -236,7 +255,13 @@ function PortalEmpresas({ className }: { className: string }) {
   const caixa = useRef<HTMLDialogElement>(null);
   return (
     <>
-      <button type="button" className={className} onClick={() => caixa.current?.showModal()}>Portal Empresas</button>
+      <button type="button" className={className} onClick={() => caixa.current?.showModal()}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"
+             strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M3 21h18M5 21V7l7-4 7 4v14M9 21v-4h6v4M9 10h.01M15 10h.01M9 14h.01M15 14h.01" />
+        </svg>
+        <span>Portal Empresas</span>
+      </button>
       <dialog ref={caixa} className={e.confirmar} aria-labelledby="confirmar-empresas">
         <h2 id="confirmar-empresas">Mudar para o Portal Empresas?</h2>
         <p>A sessão mantém-se: não precisa de voltar a entrar. Pode regressar ao IRS pelo botão «Portal IRS».</p>

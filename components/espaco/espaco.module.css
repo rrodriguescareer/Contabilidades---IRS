@@ -23,6 +23,18 @@
   padding: var(--e-5) var(--e-3);
   background: var(--azul-profundo, #0a2344);
   color: #fff;
+  /* Num ecrã baixo, o menu desliza em vez de cortar o Sair. */
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: #2a4673 transparent;
+}
+.lateral > * { flex: none; }
+@media (min-width: 901px) and (max-height: 820px) {
+  .lateral { gap: var(--e-3); padding-block: var(--e-4); }
+  .item { padding: .52rem .85rem; }
+  .contabilista { padding-block-start: var(--e-3); }
+  .contactos { display: none; }
 }
 .marca { display: block; padding-inline: var(--e-3); }
 .marca img { display: block; inline-size: 4.2rem; block-size: auto; }
@@ -60,6 +72,25 @@
   background: #7fd1ff;
   box-shadow: 0 0 0 3px rgb(127 209 255 / .25);
 }
+
+/* Novidades: um número (ou «!») no separador que mudou. */
+.contagem {
+  margin-inline-start: auto;
+  display: inline-grid;
+  place-items: center;
+  min-inline-size: 1.35rem;
+  block-size: 1.35rem;
+  padding-inline: .35rem;
+  border-radius: 999px;
+  background: #e0685f;
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  box-shadow: 0 0 0 2px var(--azul-profundo, #0a2344);
+}
+.contagem + .contagem { margin-inline-start: .25rem; }
 
 .contabilista {
   margin-block-start: auto;
@@ -810,6 +841,7 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
   .menu { display: flex; gap: 2px; }
   .item { inline-size: auto; padding: .55rem .7rem; white-space: nowrap; font-size: .85rem; }
   .item svg { display: none; }
+  .contagem { margin-inline-start: .35rem; }
   .contabilista { display: none; }
   .sairForm { display: none; }
   .sairTopo { display: block; }
@@ -941,14 +973,18 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
 /* ------------------------------------------------------- o outro portal */
 /* Quem também tem empresas passa para o portal Empresas sem nova entrada. */
 .outroPortal {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: .6rem;
   inline-size: 100%;
-  padding: .62rem 1rem;
+  padding: .72rem 1rem;
   border: 1px solid #2a4673;
   border-radius: .7rem;
   background: transparent;
   color: #c6d6ee;
   font: inherit;
-  font-size: .9rem;
+  font-size: .93rem;
   font-weight: 650;
   cursor: pointer;
 }

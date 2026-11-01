@@ -67,3 +67,36 @@ export async function avisarMensagem(mensagem: string, processo: string, utiliza
     processo,
   });
 }
+
+/** O pedido de desistência: ao gabinete, para decidir, e ao cliente, como
+    confirmação de receção num suporte duradouro (o email). */
+export async function avisarDesistencia(processo: string, utilizador: string, pedido: string, dentroDoPrazo: boolean, motivo: string) {
+  const pessoa = await quem(utilizador);
+  await enviarEmail({
+    chave: `desistencia:${pedido}`, para: EMAIL_GABINETE, interno: true,
+    assunto: `Pedido de desistência: ${pessoa?.full_name || 'cliente'}`,
+    titulo: 'Pedido de desistência do serviço',
+    paragrafos: [
+      `${pessoa?.full_name || 'Um cliente'} pediu para desistir da preparação do IRS.`,
+      dentroDoPrazo ? 'O pedido foi feito dentro dos 14 dias de livre resolução.' : 'O pedido foi feito depois dos 14 dias de livre resolução.',
+      motivo ? `Motivo indicado: ${motivo.slice(0, 600)}` : 'Não indicou motivo.',
+    ],
+    botao: { texto: 'Decidir na gestão', url: `${GESTAO}/irs?processo=${processo}` },
+    processo,
+  });
+  if (pessoa?.email) {
+    await enviarEmail({
+      chave: `desistencia-recebida:${pedido}`, para: pessoa.email,
+      assunto: 'Recebemos o seu pedido de desistência',
+      titulo: 'Pedido de desistência recebido',
+      paragrafos: [
+        `Olá${primeiroNome(pessoa.full_name) ? `, ${primeiroNome(pessoa.full_name)}` : ''}.`,
+        `Confirmamos a receção do seu pedido de desistência do serviço de preparação do IRS, a ${new Date().toLocaleString('pt-PT', { timeZone: 'Europe/Lisbon', dateStyle: 'long', timeStyle: 'short' })}.`,
+        'O contabilista vai analisá-lo e responder-lhe pelo portal. Se houver lugar a reembolso, é feito pelo mesmo meio de pagamento.',
+        'Pode anular o pedido em «A minha conta» enquanto ele não for decidido.',
+      ],
+      botao: { texto: 'Abrir a minha conta', url: `${PORTAL}/perfil` },
+      processo,
+    });
+  }
+}
