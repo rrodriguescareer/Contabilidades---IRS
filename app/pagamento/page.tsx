@@ -102,8 +102,8 @@ export default async function Pagamento({ searchParams }: Props) {
         {erro && <p className="aviso-critico">{erro}</p>}
 
         <div className={e.accoes}>
-          <Link href="/app?separador=pagamento" className="btn">Voltar ao processo</Link>
-          <Link href="/app?separador=progresso" className="btn btn-secundario">Ver o acompanhamento</Link>
+          <Link prefetch={false} href="/app?separador=pagamento" className="btn">Voltar ao processo</Link>
+          <Link prefetch={false} href="/app?separador=progresso" className="btn btn-secundario">Ver o acompanhamento</Link>
         </div>
       </div>
     </main>

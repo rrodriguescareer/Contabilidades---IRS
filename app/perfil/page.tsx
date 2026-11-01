@@ -41,7 +41,7 @@ export default async function Perfil({ searchParams }: { searchParams: Promise<{
       className="envolve"
       style={{ paddingBlock: 'var(--e-5) var(--e-8)', display: 'grid', gap: 'var(--e-5)', maxWidth: '52rem' }}
     >
-      <Link href="/app" className="btn btn-discreto btn-sm" style={{ justifySelf: 'start' }}>
+      <Link prefetch={false} href="/app" className="btn btn-discreto btn-sm" style={{ justifySelf: 'start' }}>
         ← Voltar ao IRS
       </Link>
       <h1>A minha conta</h1>
@@ -109,7 +109,7 @@ export default async function Perfil({ searchParams }: { searchParams: Promise<{
               Proteja a conta com um código do telemóvel, além da palavra-passe. Usa uma aplicação gratuita (Google
               Authenticator, Microsoft Authenticator ou as Palavras-passe do iPhone) e demora um minuto.
             </p>
-            <div><Link className="btn" href="/seguranca/ativar?destino=/perfil">Ativar</Link></div>
+            <div><Link prefetch={false} className="btn" href="/seguranca/ativar?destino=/perfil">Ativar</Link></div>
           </>
         )}
       </section>

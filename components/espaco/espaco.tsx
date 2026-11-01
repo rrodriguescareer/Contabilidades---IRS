@@ -62,7 +62,17 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
   const [estado, setEstado] = useState(estadoInicial);
   // O botão para o portal Empresas só aparece a quem também o tem.
   const [comEmpresas, setComEmpresas] = useState(false);
-  useEffect(() => { temPortalEmpresas().then(setComEmpresas).catch(() => {}); }, []);
+  // Pergunta-se uma vez por sessão do browser, não a cada página.
+  useEffect(() => {
+    try {
+      const guardado = sessionStorage.getItem('rr-portal-empresas');
+      if (guardado !== null) { setComEmpresas(guardado === '1'); return; }
+    } catch { /* sem armazenamento: pergunta */ }
+    temPortalEmpresas().then((tem) => {
+      setComEmpresas(tem);
+      try { sessionStorage.setItem('rr-portal-empresas', tem ? '1' : '0'); } catch { /* ignora */ }
+    }).catch(() => {});
+  }, []);
   const [, comecar] = useTransition();
 
   /* O que já foi carregado fica guardado: voltar a um separador não repete o
@@ -90,11 +100,15 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
   /* O que mudou desde a última visita: um número no separador. Abrir o
      acompanhamento ou os pagamentos dá-os por vistos. */
   const [novidades, setNovidades] = useState<Novidades>({});
+  const lidas = useRef(false);
+  // Lê-se à entrada e quando se abre um separador que as dá por vistas — não
+  // a cada troca de separador.
   useEffect(() => {
     let vivo = true;
     const ler = () => novidadesDoProcesso(processo).then((n) => { if (vivo) setNovidades(n); }).catch(() => {});
     if (vista === 'progresso' || vista === 'pagamento') marcarVisto(vista, processo).then(ler).catch(() => {});
-    else ler();
+    else if (!lidas.current) ler();
+    lidas.current = true;
     return () => { vivo = false; };
   }, [vista, processo]);
   const contagem = (s: Vista) =>
@@ -160,7 +174,7 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
   return (
     <div className={e.espaco}>
       <aside className={e.lateral}>
-        <Link href="/" className={e.marca} aria-label="RR.">
+        <Link prefetch={false} href="/" className={e.marca} aria-label="RR.">
           <img src="/rr-branco.svg" alt="" width={259} height={142} />
         </Link>
 
@@ -216,7 +230,7 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
               {lingua === 'pt' ? 'EN' : 'PT'}
             </button>
             {comEmpresas && <PortalEmpresas className={`${e.botaoTopo} ${e.soTelemovel}`} />}
-            <Link href="/perfil" className={e.botaoTopo}>{t('conta')}</Link>
+            <Link prefetch={false} href="/perfil" className={e.botaoTopo}>{t('conta')}</Link>
             <form action={signOut} className={e.sairTopo}>
               <button type="submit" className={e.botaoTopo}>{t('sair')}</button>
             </form>

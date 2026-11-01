@@ -34,18 +34,46 @@ export function Mensagens({
   const lista = useRef<HTMLDivElement>(null);
   const campo = useRef<HTMLTextAreaElement>(null);
 
+  // As mensagens já conhecidas, para saber se a resposta trouxe alguma nova.
+  const conhecidas = useRef(new Set(mensagens.map((m) => m.id)));
+  useEffect(() => { conhecidas.current = new Set(mensagens.map((m) => m.id)); }, [mensagens]);
+
+  // Devolve se chegou alguma mensagem nova, para o intervalo se ajustar.
   const atualizar = useCallback(async () => {
     const { dados: novos } = await pedirVista('mensagens', processo);
     const recebidas = (novos?.mensagens as Mensagem[] | undefined) || null;
-    if (recebidas) setMensagens((atuais) => [...recebidas, ...atuais.filter((m) => m.falhou)]);
+    if (!recebidas) return false;
+    const mudou = recebidas.some((m) => !conhecidas.current.has(m.id));
+    setMensagens((atuais) => [...recebidas, ...atuais.filter((m) => m.falhou)]);
+    return mudou;
   }, [processo]);
 
-  // Enquanto o separador está aberto e a janela à vista, pergunta a cada 15 s.
+  /* Enquanto a conversa está aberta e a janela à vista, pergunta por
+     mensagens novas: a cada 20 s ao início, cada vez mais espaçado quando não
+     há nada de novo (até 5 min), e logo outra vez quando chega uma mensagem
+     ou a janela volta a estar à vista. Uma conversa esquecida aberta deixa de
+     gastar pedidos de 15 em 15 segundos. */
   useEffect(() => {
-    const id = window.setInterval(() => {
-      if (document.visibilityState === 'visible') atualizar();
-    }, 15_000);
-    return () => window.clearInterval(id);
+    let espera = 20_000;
+    let id: number | undefined;
+    let vivo = true;
+    const agendar = () => { id = window.setTimeout(ciclo, espera); };
+    const ciclo = async () => {
+      if (!vivo) return;
+      if (document.visibilityState !== 'visible') return; // volta a arrancar quando a janela aparecer
+      const nova = await atualizar().catch(() => false);
+      espera = nova ? 20_000 : Math.min(300_000, Math.round(espera * 1.6));
+      if (vivo) agendar();
+    };
+    const aoVer = () => {
+      if (document.visibilityState !== 'visible') return;
+      window.clearTimeout(id);
+      espera = 20_000;
+      ciclo();
+    };
+    agendar();
+    document.addEventListener('visibilitychange', aoVer);
+    return () => { vivo = false; window.clearTimeout(id); document.removeEventListener('visibilitychange', aoVer); };
   }, [atualizar]);
 
   // A conversa lê-se de baixo: o mais recente fica à vista. Só a caixa da
