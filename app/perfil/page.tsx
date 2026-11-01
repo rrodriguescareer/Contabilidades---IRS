@@ -3,6 +3,7 @@ import { session } from '@/lib/auth';
 import { changeEmail, changeOwnPassword } from '@/lib/profile-actions';
 import { signOut } from '@/lib/auth-actions';
 import { anularDesistencia, pedirDesistencia } from '@/lib/desistencia';
+import { DesativarDoisFatores } from '@/components/desativar-dois-fatores';
 import FormularioPerfil, { type PerfilPessoal } from '@/components/profile-form';
 import { Submeter } from '@/components/forms';
 import { CampoPalavraPasse } from '@/components/campo-palavra-passe';
@@ -18,6 +19,10 @@ export default async function Perfil({ searchParams }: { searchParams: Promise<{
   const { data: pessoa } = perfil?.nif
     ? await client.from('people').select('tax_two_factor').eq('nif', perfil.nif).limit(1)
     : { data: [] };
+
+  // A autenticação de dois fatores: ativa, e desde quando.
+  const { data: fatores } = await client.auth.mfa.listFactors();
+  const segundoFator = fatores?.totp?.find((f) => f.status === 'verified');
 
   // O processo mais recente e os pedidos de desistência que já houve.
   const processo = [...(context.cases ?? [])].sort((a, b) => b.tax_year - a.tax_year)[0];
@@ -87,6 +92,27 @@ export default async function Perfil({ searchParams }: { searchParams: Promise<{
           </form>
         </section>
       </div>
+
+      <section id="dois-fatores" className="cartao pilha pilha-4">
+        <h2 className="pequeno maiusc suave">Autenticação de dois fatores</h2>
+        {segundoFator ? (
+          <>
+            <p className="aviso aviso-positivo">
+              Ativa desde {new Date(segundoFator.created_at).toLocaleDateString('pt-PT', { timeZone: 'Europe/Lisbon', dateStyle: 'long' })}.
+              Cada entrada pede o código da aplicação de autenticação.
+            </p>
+            <DesativarDoisFatores />
+          </>
+        ) : (
+          <>
+            <p className="pequeno">
+              Proteja a conta com um código do telemóvel, além da palavra-passe. Usa uma aplicação gratuita (Google
+              Authenticator, Microsoft Authenticator ou as Palavras-passe do iPhone) e demora um minuto.
+            </p>
+            <div><Link className="btn" href="/seguranca/ativar?destino=/perfil">Ativar</Link></div>
+          </>
+        )}
+      </section>
 
       {processo && (
         <section id="desistencia" className="cartao pilha pilha-4">

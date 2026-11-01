@@ -1007,3 +1007,97 @@ img.avatar { inline-size: 2.75rem; block-size: 2.75rem; }
 .confirmar h2 { margin: 0 0 var(--e-2); font-size: var(--t-lg); }
 .confirmar p { margin: 0; color: var(--texto-suave); font-size: var(--t-sm); }
 .confirmarAcoes { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: var(--e-2); margin-block-start: var(--e-4); }
+
+
+/* ------------------------------------------------------------- o roteiro */
+/* Sete marcos numa estrada. A linha de fundo é o caminho todo; a azul, o que
+   já foi feito. Horizontal em ecrãs largos, vertical no telemóvel. */
+.roteiro { display: grid; gap: var(--e-5); }
+.estrada {
+  --n: 7;
+  position: relative;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--n), minmax(0, 1fr));
+  gap: var(--e-2);
+}
+.estrada::before, .estrada::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 1.05rem;
+  inset-inline-start: calc(100% / var(--n) / 2);
+  block-size: .3rem;
+  border-radius: 999px;
+}
+.estrada::before { inline-size: calc(100% - 100% / var(--n)); background: var(--linha); }
+.estrada::after {
+  inline-size: calc((100% - 100% / var(--n)) * var(--progresso, 0));
+  background: linear-gradient(90deg, var(--acao), #5b8cff);
+  transition: inline-size .5s var(--curva, ease);
+}
+.marco { position: relative; z-index: 1; display: grid; justify-items: center; align-content: start; gap: .55rem; text-align: center; min-inline-size: 0; }
+.no {
+  display: grid;
+  place-items: center;
+  inline-size: 2.4rem;
+  block-size: 2.4rem;
+  border-radius: 999px;
+  border: 2px solid var(--linha-forte);
+  background: var(--superficie);
+  color: var(--texto-suave);
+  font-size: .85rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+.marco[data-situacao='feito'] .no { background: var(--acao); border-color: var(--acao); color: #fff; }
+.marco[data-situacao='atual'] .no { border-color: var(--acao); color: var(--acao-forte); box-shadow: 0 0 0 6px var(--acao-suave); animation: marcoPulso 2.4s ease-in-out infinite; }
+.marco[data-desvio='true'] .no { border-color: #e0a33a; background: var(--atencao-suave, #fdf2dc); color: #9a6207; box-shadow: 0 0 0 6px var(--atencao-suave, #fdf2dc); }
+@keyframes marcoPulso { 50% { box-shadow: 0 0 0 10px color-mix(in srgb, var(--acao-suave) 40%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .marco[data-situacao='atual'] .no { animation: none; } }
+.marcoTexto { display: grid; gap: .2rem; min-inline-size: 0; }
+.marcoTexto strong { font-size: .8rem; line-height: 1.25; color: var(--texto-suave); overflow-wrap: anywhere; }
+.marco[data-situacao='feito'] .marcoTexto strong, .marco[data-situacao='atual'] .marcoTexto strong { color: var(--texto); }
+.marcoTexto small { font-size: .7rem; font-weight: 650; color: var(--texto-suave); }
+.marco[data-situacao='atual'] .marcoTexto small { color: var(--acao-forte); }
+.marco[data-desvio='true'] .marcoTexto small { color: #9a6207; }
+.marcoNota { font-size: .72rem; line-height: 1.4; color: var(--texto-suave); }
+
+.marcoAtual {
+  display: grid;
+  gap: var(--e-3);
+  padding: var(--e-5);
+  border: 1px solid color-mix(in srgb, var(--acao) 35%, var(--linha));
+  border-radius: 1rem;
+  background: radial-gradient(120% 140% at 100% 0%, #e9f0ff 0%, var(--superficie) 60%);
+}
+.marcoAtual[data-desvio='true'] { border-color: #e0a33a; background: var(--atencao-suave, #fdf2dc); }
+.marcoAtualTopo { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--e-3); }
+.marcoAtual h3 { margin: 0; font-size: var(--t-xl); letter-spacing: -.03em; }
+.marcoAtual > p { margin: 0; color: var(--texto-suave); max-inline-size: 48rem; }
+
+/* Na versão compacta (início) só a estrada, mais baixa. */
+.roteiro[data-compacto='true'] .no { inline-size: 2rem; block-size: 2rem; font-size: .75rem; }
+.roteiro[data-compacto='true'] .estrada::before, .roteiro[data-compacto='true'] .estrada::after { inset-block-start: .85rem; }
+.roteiro[data-compacto='true'] .marcoTexto strong { font-size: .72rem; }
+
+/* No telemóvel e em painéis estreitos, a estrada desce na vertical. */
+@media (max-width: 760px) {
+  .estrada { grid-template-columns: 1fr; gap: var(--e-4); }
+  .estrada::before, .estrada::after {
+    inset-block-start: 1.2rem;
+    inset-inline-start: calc(1.2rem - .15rem);
+    inline-size: .3rem;
+  }
+  .estrada::before { block-size: calc(100% - 2.4rem); }
+  .estrada::after { block-size: calc((100% - 2.4rem) * var(--progresso, 0)); inline-size: .3rem; background: linear-gradient(180deg, var(--acao), #5b8cff); }
+  .marco { grid-template-columns: auto minmax(0, 1fr); justify-items: start; align-items: start; text-align: start; gap: var(--e-3); }
+  .marcoTexto { padding-block-start: .3rem; }
+  .marcoTexto strong { font-size: .9rem; }
+  .roteiro[data-compacto='true'] .estrada { gap: var(--e-3); }
+  .roteiro[data-compacto='true'] .estrada::before, .roteiro[data-compacto='true'] .estrada::after { inset-block-start: 1rem; inset-inline-start: calc(1rem - .15rem); }
+  .roteiro[data-compacto='true'] .estrada::before { block-size: calc(100% - 2rem); }
+  .roteiro[data-compacto='true'] .estrada::after { block-size: calc((100% - 2rem) * var(--progresso, 0)); }
+  .roteiro[data-compacto='true'] .marco:not([data-situacao='atual']) small { display: none; }
+}

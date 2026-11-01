@@ -1,6 +1,6 @@
 import type {SupabaseClient} from '@supabase/supabase-js';
 import type {Account,Process,Profile} from './data';
-export type PortalContext={id:string;email:string;email_confirmed:boolean;is_staff:boolean;profile:Profile;legal_accepted:boolean;accounts?:Account[];cases?:Process[]};
+export type PortalContext={id:string;email:string;email_confirmed:boolean;aal_em_falta?:boolean;is_staff:boolean;profile:Profile;legal_accepted:boolean;accounts?:Account[];cases?:Process[]};
 /** A identidade verificada, numa só chamada: o get_portal_context deriva tudo
     de auth.uid() e diz se a versão em vigor dos Termos está aceite. */
 export async function portalContext(client:SupabaseClient,id?:string){

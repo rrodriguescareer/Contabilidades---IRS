@@ -61,4 +61,4 @@ export async function proxy(request: NextRequest) {
   // Por último: reescreve a sessão para o domínio partilhado (irs., portal., gestao.).
   return partilharCookiesDeSessao(request, response);
 }
-export const config = { matcher: ['/app/:path*','/gabinete/:path*','/gabinete','/nova-password','/onboarding','/perfil','/pagamento','/convites/:path*','/aceitar-termos'] };
+export const config = { matcher: ['/app/:path*','/gabinete/:path*','/gabinete','/nova-password','/onboarding','/perfil','/pagamento','/convites/:path*','/aceitar-termos','/verificar','/seguranca','/seguranca/:path*'] };

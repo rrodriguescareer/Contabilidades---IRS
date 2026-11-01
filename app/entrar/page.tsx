@@ -3,6 +3,7 @@ import { Submeter } from '@/components/forms';
 import { AEntrar } from '@/components/chegada';
 import { EcraAutenticacao } from '@/lib/auth-view';
 import { signIn } from '@/lib/auth-actions';
+import { ContinuarCom } from '@/components/continuar-com';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Entrar' };
@@ -22,6 +23,7 @@ export default async function Entrar({ searchParams }: { searchParams: Promise<{
         </>
       }
     >
+      <ContinuarCom destino={parametros.destino ?? ''} />
       <form action={signIn}>
         <input type="hidden" name="destino" value={parametros.destino ?? ''} />
         <label className="campo">

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Submeter } from '@/components/forms';
 import { EcraAutenticacao } from '@/lib/auth-view';
 import { signUp } from '@/lib/auth-actions';
+import { ContinuarCom } from '@/components/continuar-com';
 import AceitacaoLegal from '@/components/legal-acceptance';
 import { CampoPalavraPasse } from '@/components/campo-palavra-passe';
 
@@ -17,6 +18,7 @@ export default async function Registar({ searchParams }: { searchParams: Promise
       erro={erro}
       rodape={<Link href="/entrar">Já tenho conta</Link>}
     >
+      <ContinuarCom destino="/app" nota="Com o Google ou a Apple, a conta fica criada logo e os Termos são aceites no passo seguinte." />
       <form action={signUp}>
         <label className="campo">
           <span>Email</span>

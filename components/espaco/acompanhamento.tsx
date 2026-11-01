@@ -1,5 +1,6 @@
 'use client';
-import { FASES, QUEM, eDesvio, estadoDe, posicao, type Prontidao } from '@/lib/fluxo';
+import { QUEM, eDesvio, estadoDe, roteiro, type Prontidao } from '@/lib/fluxo';
+import { Roteiro } from './roteiro';
 import type { Dados, Vista } from './espaco';
 import e from './espaco.module.css';
 
@@ -29,7 +30,7 @@ export function Acompanhamento({ dados, ir }: { dados: Dados; ir: (v: Vista) => 
   const consultas = (dados.consultas_senha as { pessoa: string; em: string }[]) || [];
 
   const estado = estadoDe(proc?.estado);
-  const { etapa, etapas } = posicao(proc?.estado);
+  const { passos, atual } = roteiro(proc?.estado, prontidao, eventos);
   const meus = prontidao.filter((p) => p.de === 'cliente');
   const podeSubmeter = proc?.estado === 'collecting' || proc?.estado === 'returned';
   const checkout = (dados.checkout as { estado: string } | null) || null;
@@ -42,7 +43,7 @@ export function Acompanhamento({ dados, ir }: { dados: Dados; ir: (v: Vista) => 
     <div className={e.acompanhamento}>
       <section className={`${e.cartao} ${e.estadoAtual}`} data-espera={estado?.espera}>
         <div className={e.estadoTopo}>
-          <span className={e.etapaRotulo}>Etapa {etapa + 1} de {etapas} · {FASES[etapa]?.titulo}</span>
+          <span className={e.etapaRotulo}>Marco {atual + 1} de {passos.length} · {passos[atual]?.titulo}</span>
           <span className="selo-espera" data-espera={estado?.espera}>{QUEM[estado?.espera || 'cliente']}</span>
         </div>
         <h2>{estado?.titulo || 'Processo'}</h2>
@@ -59,26 +60,8 @@ export function Acompanhamento({ dados, ir }: { dados: Dados; ir: (v: Vista) => 
       </section>
 
       <section className={e.cartao}>
-        <h3 className={e.tituloCartao}>As etapas do processo</h3>
-        <ol className={e.etapas}>
-          {FASES.map((f, i) => {
-            const situacao = i < etapa ? 'feito' : i === etapa ? 'atual' : 'por-vir';
-            return (
-              <li key={f.id} data-estado={situacao} data-desvio={i === etapa && estado?.desvio ? 'true' : undefined}>
-                <span className={e.etapaMarca} aria-hidden="true">
-                  {situacao === 'feito' ? (
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"
-                         strokeLinecap="round" strokeLinejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5" /></svg>
-                  ) : i + 1}
-                </span>
-                <div>
-                  <strong>{f.titulo}</strong>
-                  <span>{situacao === 'atual' && estado ? estado.titulo : f.nota}</span>
-                </div>
-              </li>
-            );
-          })}
-        </ol>
+        <h3 className={e.tituloCartao}>O roteiro do seu IRS</h3>
+        <Roteiro estado={proc?.estado} prontidao={prontidao} eventos={eventos} ir={ir} />
       </section>
 
       {podeSubmeter && meus.length > 0 && (

@@ -30,8 +30,9 @@ export async function signIn(form:FormData){
  // Marca a entrada para a transição de boas-vindas. Vive 30 segundos e não
  // leva nada de pessoal: é só um sinal para o ecrã seguinte.
  frasco.set('rr_chegada','1',{maxAge:30,path:'/',sameSite:'lax',httpOnly:false,secure:process.env.NODE_ENV==='production'});
- if(frasco.get('rr_invite'))redirect('/convites/aceitar');
- redirect(interno||'/app');
+ // Com o segundo fator ativo, primeiro o código; sem ele, a pergunta «quer ativar?».
+ const {depoisDeEntrar}=await import('./depois-de-entrar');
+ redirect(await depoisDeEntrar(client,frasco.get('rr_invite')?'/convites/aceitar':(interno||'/app')));
 }
 export async function signUp(form: FormData) {
   if (IS_MANAGEMENT) error('O registo de profissionais é feito pela administração.');

@@ -1,5 +1,6 @@
 'use client';
-import { FASES, QUEM, estadoDe, posicao, type Prontidao } from '@/lib/fluxo';
+import { QUEM, estadoDe, roteiro, type Prontidao } from '@/lib/fluxo';
+import { Roteiro } from './roteiro';
 import type { Dados, Vista } from './espaco';
 import e from './espaco.module.css';
 
@@ -23,14 +24,15 @@ const DESTINO: Record<string, { vista: Vista; acao: string }> = {
    coluna, sem os números repetidos do menu. */
 export function Inicio({ dados, ir }: { dados: Dados; ir: (v: Vista) => void }) {
   const proc = (dados.processo as { estado: string; desde: string; valor_final: number | null; sentido: string | null }) || null;
-  const prontidao = ((dados.prontidao as Prontidao[]) || []).filter((p) => p.de === 'cliente');
+  const prontidaoToda = (dados.prontidao as Prontidao[]) || [];
+  const prontidao = prontidaoToda.filter((p) => p.de === 'cliente');
   const contagens = (dados.contagens as Record<string, number>) || {};
   const checkout = (dados.checkout as { estado: string; total: number } | null) || null;
   const ultima = (dados.ultima_do_gabinete as { corpo: string; em: string } | null) || null;
   const eventos = ((dados.eventos as { id: string; titulo: string; corpo: string; em: string }[]) || []).slice(0, 3);
 
   const estado = estadoDe(proc?.estado);
-  const { etapa, etapas } = posicao(proc?.estado);
+  const { passos, atual } = roteiro(proc?.estado, prontidaoToda);
   const emRecolha = proc?.estado === 'collecting' || proc?.estado === 'returned';
   const faltas = prontidao.filter((p) => p.bloqueia && p.estado === 'falta');
   const pago = checkout?.estado === 'paid';
@@ -55,7 +57,7 @@ export function Inicio({ dados, ir }: { dados: Dados; ir: (v: Vista) => void }) 
       <div className={e.inicioPrincipal}>
         <section className={`${e.cartao} ${e.destaque}`}>
           <div className={e.destaqueTopo}>
-            <span className={e.etapaRotulo}>Etapa {etapa + 1} de {etapas} · {FASES[etapa]?.titulo}</span>
+            <span className={e.etapaRotulo}>Marco {atual + 1} de {passos.length} · {passos[atual]?.titulo}</span>
             <span className="selo-espera" data-espera={estado?.espera}>{QUEM[estado?.espera || 'cliente']}</span>
           </div>
           <h2>{seguinte.titulo}</h2>
@@ -63,14 +65,7 @@ export function Inicio({ dados, ir }: { dados: Dados; ir: (v: Vista) => void }) 
           <div>
             <button type="button" className="btn" onClick={() => ir(seguinte.vista)}>{seguinte.botao}</button>
           </div>
-          <ol className={e.fasesInicio} aria-label="Etapas do processo">
-            {FASES.map((f, i) => (
-              <li key={f.id} data-estado={i < etapa ? 'feito' : i === etapa ? 'atual' : 'por-vir'}>
-                <span />
-                <strong>{f.titulo}</strong>
-              </li>
-            ))}
-          </ol>
+          <Roteiro estado={proc?.estado} prontidao={prontidaoToda} compacto />
           {proc?.valor_final != null && proc.sentido && (
             <p className={proc.sentido === 'refund' ? 'aviso-positivo' : 'aviso-atencao'}>
               {proc.sentido === 'refund' ? 'Reembolso apurado' : 'Imposto a pagar'}: {euros(proc.valor_final)}

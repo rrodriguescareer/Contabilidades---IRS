@@ -29,6 +29,8 @@ export const identity = cache(async function identity() {
     redirect(erro('Acesso bloqueado. Contacte o contabilista.'));
   }
   if (!contexto.email_confirmed) redirect(erro('Confirme o seu email para continuar.'));
+  // Com o segundo fator ativo, a sessão só chega aos dados depois do código.
+  if (contexto.aal_em_falta) redirect('/verificar');
 
   return { client, user: { id: contexto.id, email: contexto.email }, context: contexto };
 });

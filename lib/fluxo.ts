@@ -233,3 +233,78 @@ export type Prontidao = {
     can_edit_case da base de dados permite: recolha e devolvido. */
 export const emRecolha = (estado: string | null | undefined) =>
   estado === 'collecting' || estado === 'returned';
+
+/* ------------------------------------------------------------ o roteiro */
+
+/* O que o cliente vê: sete marcos, do agregado ao reembolso. Os três
+ * primeiros são da parte dele e avançam com o que já preencheu (a prontidão);
+ * os outros quatro seguem o estado do processo no gabinete e na AT. */
+
+export type Marco = { id: string; titulo: string; descricao: string; quem: Espera };
+
+export const ROTEIRO: Marco[] = [
+  { id: 'agregado', titulo: 'O agregado', quem: 'cliente',
+    descricao: 'Quem entra na declaração, com a data de nascimento, o NIF e a senha do Portal das Finanças.' },
+  { id: 'rendimentos', titulo: 'Rendimentos e documentos', quem: 'cliente',
+    descricao: 'Cada tipo de rendimento do ano, com os documentos que o comprovam, e as deduções.' },
+  { id: 'submissao', titulo: 'Submissão', quem: 'cliente',
+    descricao: 'Revê o resumo e o preço e envia o processo ao contabilista. O pagamento pode ser feito já ou depois.' },
+  { id: 'revisao', titulo: 'Revisão do contabilista', quem: 'gabinete',
+    descricao: 'O contabilista confere tudo com a informação da Autoridade Tributária e escolhe a opção mais favorável.' },
+  { id: 'entrega', titulo: 'Entrega nas Finanças', quem: 'gabinete',
+    descricao: 'A declaração é submetida no Portal das Finanças, em seu nome.' },
+  { id: 'liquidacao', titulo: 'Liquidação da AT', quem: 'at',
+    descricao: 'A Autoridade Tributária valida a declaração e emite a liquidação com o valor final.' },
+  { id: 'fecho', titulo: 'Reembolso ou pagamento', quem: 'ninguem',
+    descricao: 'O reembolso chega à conta indicada nas Finanças, ou paga-se o imposto apurado. O processo fica concluído.' },
+];
+
+/** O marco em que cada estado do gabinete está. Entregue na AT já é
+    esperar pela liquidação. */
+const MARCO_DO_ESTADO: Record<string, number> = {
+  submitted_by_client: 3, accepted: 3, validation: 3,
+  approved: 4, submitting: 4,
+  filed: 5, monitoring: 5, divergence: 5, assessed: 5,
+  closed: 6,
+};
+
+/** O evento do histórico que fecha cada marco: é dele que vem a data. */
+const EVENTO_QUE_FECHA: Record<string, string[]> = {
+  submissao: [TITULOS_DE_EVENTO.submitted_by_client, 'Pagamento recebido'],
+  revisao: [TITULOS_DE_EVENTO.approved, TITULOS_DE_EVENTO.submitting],
+  entrega: [TITULOS_DE_EVENTO.filed],
+  liquidacao: [TITULOS_DE_EVENTO.assessed],
+  fecho: [TITULOS_DE_EVENTO.closed, 'Desistência aceite'],
+};
+
+export type PassoDoRoteiro = Marco & {
+  situacao: 'feito' | 'atual' | 'por-vir';
+  /** Devolvido para correção ou divergência na AT. */
+  desvio: boolean;
+  /** Quando ficou feito, se o histórico o disser. */
+  em: string | null;
+};
+
+export function roteiro(
+  estado: string | null | undefined,
+  prontidao: Prontidao[] = [],
+  eventos: { titulo: string; em: string }[] = [],
+): { passos: PassoDoRoteiro[]; atual: number } {
+  const ok = (chave: string) => prontidao.find((p) => p.chave === chave)?.estado === 'ok';
+  const fechado = estado === 'closed';
+  let atual: number;
+  if (!estado || emRecolha(estado)) {
+    // Na recolha, o marco atual é o primeiro que ainda tem coisas em falta.
+    atual = !(ok('titular') && ok('senha')) ? 0 : !(ok('rendimentos') && ok('documentos')) ? 1 : 2;
+  } else {
+    atual = MARCO_DO_ESTADO[estado] ?? 3;
+  }
+  const desvio = estado === 'returned' || estado === 'divergence';
+  const passos = ROTEIRO.map((m, i): PassoDoRoteiro => {
+    const titulos = EVENTO_QUE_FECHA[m.id] ?? [];
+    const evento = eventos.filter((e) => titulos.includes(e.titulo)).sort((a, b) => (a.em < b.em ? 1 : -1))[0];
+    const situacao = fechado || i < atual ? 'feito' : i === atual ? 'atual' : 'por-vir';
+    return { ...m, situacao, desvio: i === atual && desvio && !fechado, em: situacao === 'feito' ? evento?.em ?? null : null };
+  });
+  return { passos, atual: fechado ? ROTEIRO.length - 1 : atual };
+}
