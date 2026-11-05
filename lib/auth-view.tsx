@@ -28,7 +28,7 @@ export function EcraAutenticacao({ children, titulo, descricao, mensagem, erro, 
             princípio ao fim.
           </p>
         </div>
-        <small>Rúben Meirinho Rodrigues · Contabilista Certificado n.º 145854</small>
+        <small>Rúben Meirinho Rodrigues · Contabilista Certificado n.º 106297</small>
       </section>
 
       <section className={a.coluna}>

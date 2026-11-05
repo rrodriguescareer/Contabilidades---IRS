@@ -199,7 +199,7 @@ function Painel({ conta, processo, nome, estado: estadoInicial, vistaInicial, da
           <img src="/ruben-rodrigues.webp" alt="Rúben Meirinho Rodrigues" width={96} height={96} className={e.avatar} />
           <div>
             <strong>Rúben Meirinho Rodrigues</strong>
-            <span>Contabilista Certificado · Cédula 145854</span>
+            <span>Contabilista Certificado · Cédula 106297</span>
           </div>
           <div className={e.contactos}>
             <button type="button" onClick={() => ir('mensagens')}>Enviar mensagem</button>

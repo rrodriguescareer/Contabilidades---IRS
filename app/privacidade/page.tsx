@@ -9,7 +9,7 @@ export default function Privacy() {
       <section>
         <h2>Responsável pelo tratamento</h2>
         <p>
-          Rúben Miguel da Silva Duarte Meirinho Rodrigues, Contabilista Certificado, cédula n.º 145854. Domicílio
+          Rúben Miguel da Silva Duarte Meirinho Rodrigues, Contabilista Certificado, cédula n.º 106297. Domicílio
           profissional: Rua Augusto Simões 845 4470-147 Maia. Para questões sobre dados pessoais,
           contacte <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.
         </p>

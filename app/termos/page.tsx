@@ -11,7 +11,7 @@ export default function Terms() {
         <h2>1. Responsável e contacto</h2>
         <p>
           O Portal IRS é disponibilizado por Rúben Miguel da Silva Duarte Meirinho Rodrigues, Contabilista Certificado
-          com a cédula n.º 145854, com domicílio profissional na Rua Augusto Simões 845 4470-147 Maia.
+          com a cédula n.º 106297, com domicílio profissional na Rua Augusto Simões 845 4470-147 Maia.
           Contacto: <a href={`mailto:${EMAIL}`}>{EMAIL}</a>.
         </p>
       </section>

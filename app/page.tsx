@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 const CONFIANCA = [
   {
     titulo: 'Contabilista certificado',
-    texto: 'Rúben Miguel da Silva Duarte Meirinho Rodrigues, cédula profissional n.º 145854. O seu processo é tratado por quem assina.',
+    texto: 'Rúben Miguel da Silva Duarte Meirinho Rodrigues, cédula profissional n.º 106297. O seu processo é tratado por quem assina.',
   },
   {
     titulo: 'Os seus dados ficam seus',
@@ -166,7 +166,7 @@ export default function Pagina() {
             <p>
               <span className={e.rodapeNome}>Rúben Miguel da Silva Duarte Meirinho Rodrigues</span>
               <span>
-                Contabilista Certificado com a cédula n.º 145854 · Domicílio Profissional na Rua Augusto Simões
+                Contabilista Certificado com a cédula n.º 106297 · Domicílio Profissional na Rua Augusto Simões
                 845 4470-147 Maia
               </span>
             </p>
